@@ -1,25 +1,27 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"
-import { AuthProvider } from "./contexts/AuthContext"
-import Header from "./components/Header"
-import Home from "./components/Home"
-import Login from "./components/Login"
-import SignUp from "./components/SignUp"
-import TimeCapsule from "./components/TimeCapsule"
-import CommunityFeed from "./components/CommunityFeed"
-import PersonalityTest from "./components/PersonalityTest"
-import AITherapy from "./components/AITherapy"
-import BookSession from "./components/BookSession"
-import UserDashboard from "./components/UserDashboard"
-import ProtectedRoute from "./components/ProtectedRoute"
+// frontend/src/App.jsx
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import Header from './components/Header';
+import Home from './components/Home';
+import Login from './components/Login';
+import SignUp from './components/SignUp';
+import TimeCapsule from './components/TimeCapsule';
+import CommunityFeed from './components/CommunityFeed';
+import PersonalityTest from './components/PersonalityTest';
+import AITherapy from './components/AITherapy';
+import BookSession from './components/BookSession';
+import UserDashboard from './components/UserDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import Settings from './components/Settings';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          <Header />
-          <Routes>
-            <Route path="/" element={<Home />} />
+      <div className="App">
+        <Header />
+        <Routes>
+        <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route
@@ -70,12 +72,15 @@ function App() {
                 </ProtectedRoute>
               }
             />
-          </Routes>
-        </div>
-      </Router>
+            <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </div>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
-
+export default App;

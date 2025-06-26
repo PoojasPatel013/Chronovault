@@ -1,137 +1,190 @@
-"use client"
+// frontend/src/components/PersonalityTest.jsx
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+const ANSWER_VALUES = {
+  'Disagree strongly': -3,
+  'Disagree moderately': -2,
+  'Disagree a little': -1,
+  'Neither agree nor disagree': 0,
+  'Agree a little': 1,
+  'Agree moderately': 2,
+  'Agree strongly': 3
+};
 
-const questions = [
-  { id: 1, text: "You regularly make new friends.", trait: "extraversion" },
-  {
-    id: 2,
-    text: "You spend a lot of your free time exploring various random topics that pique your interest.",
-    trait: "intuition",
-  },
-  { id: 3, text: "Seeing other people cry can easily make you feel like you want to cry too.", trait: "feeling" },
-  { id: 4, text: "You often make a backup plan for a backup plan.", trait: "judging" },
-  { id: 5, text: "You usually stay calm, even under a lot of pressure.", trait: "turbulent" },
-];
+const ANSWER_OPTIONS = Object.entries(ANSWER_VALUES).map(([text, value]) => ({
+  text,
+  value
+}));
 
 const PersonalityTest = () => {
+  const { user } = useAuth();
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [showResult, setShowResult] = useState(false);
-  const [personalityType, setPersonalityType] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleAnswer = (value) => {
-    setAnswers({ ...answers, [currentQuestion]: value });
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      calculatePersonality();
+  useEffect(() => {
+    fetchQuestions();
+  }, []);
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/personality/questions');
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to load questions');
+      }
+      setQuestions(data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching questions:', err);
+      setError('Failed to load questions');
+      setLoading(false);
     }
   };
 
-  const calculatePersonality = () => {
-    const traits = {
-      extraversion: 0,
-      intuition: 0,
-      feeling: 0,
-      judging: 0,
-      turbulent: 0,
-    };
-
-    Object.entries(answers).forEach(([questionId, answer]) => {
-      const question = questions.find((q) => q.id === Number(questionId));
-      if (question) {
-        traits[question.trait] += answer;
-      }
-    });
-
-    const type = [
-      traits.extraversion > 0 ? "E" : "I",
-      traits.intuition > 0 ? "N" : "S",
-      traits.feeling > 0 ? "F" : "T",
-      traits.judging > 0 ? "J" : "P",
-      traits.turbulent > 0 ? "T" : "A",
-    ].join("");
-
-    setPersonalityType(type);
-    setShowResult(true);
+  const handleAnswer = (value) => {
+    const questionId = questions[currentQuestion].id;
+    const existingAnswer = answers.find(a => a.id === questionId);
+    
+    if (existingAnswer) {
+      existingAnswer.value = value;
+    } else {
+      answers.push({ id: questionId, value });
+    }
+    
+    setAnswers([...answers]);
   };
 
-  const progressPercentage = (currentQuestion / questions.length) * 100;
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      setError('Please login to take the personality test');
+      return;
+    }
+
+    try {
+      const token = document.cookie.split('; ').find(row => row.startsWith('token=')).split('=')[1];
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:8000/api/personality/type', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          answers,
+          gender: user.gender || 'Other'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to get personality type');
+      }
+
+      const data = await response.json();
+      window.location.href = '/personality/results';
+    } catch (err) {
+      setError(err.message);
+      console.error('Error submitting personality test:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!questions.length) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">No questions loaded</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-4xl font-bold mb-8 text-center"
-        >
-          Personality Test
-        </motion.h1>
-
-        {!showResult ? (
-          <motion.div
-            key={currentQuestion}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-2xl font-semibold mb-4">
+    <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold text-white mb-8">Personality Test</h1>
+        <div className="bg-gray-800 rounded-lg p-6">
+          <div className="mb-8">
+            <p className="text-gray-300">
               Question {currentQuestion + 1} of {questions.length}
-            </h2>
-            <div className="bg-gray-800 p-6 rounded-lg shadow-md">
-              <p className="text-xl mb-6">{questions[currentQuestion].text}</p>
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    onClick={() => handleAnswer(value)}
-                    className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
-                  >
-                    {value === 1 && "Strongly Disagree"}
-                    {value === 2 && "Disagree"}
-                    {value === 3 && "Neutral"}
-                    {value === 4 && "Agree"}
-                    {value === 5 && "Strongly Agree"}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 bg-gray-800 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progressPercentage}%` }}
-              ></div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-gray-800 p-6 rounded-lg shadow-md text-center"
-          >
-            <h2 className="text-3xl font-bold mb-4">Your Personality Type</h2>
-            <p className="text-5xl font-bold text-blue-500 mb-6">{personalityType}</p>
-            <p className="text-xl">
-              Congratulations! You've completed the personality test. Your result indicates that you're a {personalityType} type.
             </p>
+            <h2 className="text-xl font-semibold text-white mt-2">
+              {questions[currentQuestion].text}
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {ANSWER_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleAnswer(option.value)}
+                className="w-full px-4 py-2 border border-gray-700 rounded-md text-white hover:bg-gray-700 transition-colors"
+              >
+                {option.text}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-between mt-8">
             <button
-              onClick={() => {
-                setCurrentQuestion(0);
-                setAnswers({});
-                setShowResult(false);
-              }}
-              className="mt-8 bg-blue-600 text-white px-6 py-3 rounded-full text-lg hover:bg-blue-700 transition-colors"
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+              className="px-4 py-2 border border-gray-700 rounded-md text-white hover:bg-gray-700 disabled:opacity-50"
             >
-              Retake Test
+              Previous
             </button>
-          </motion.div>
-        )}
+            <div className="flex space-x-4">
+              {currentQuestion < questions.length - 1 ? (
+                <button
+                  onClick={handleNext}
+                  className="px-4 py-2 border border-gray-700 rounded-md text-white hover:bg-gray-700"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-md"
+                >
+                  Submit
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

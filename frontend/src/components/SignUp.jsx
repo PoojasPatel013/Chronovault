@@ -1,125 +1,131 @@
-import React from "react"
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { motion } from "framer-motion"
+// frontend/src/components/Signup.jsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const SignUp = () => {
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+const Signup = () => {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { signup } = useAuth();
 
-  const validateForm = () => {
-    if (!username.trim()) return "Username is required";
-    if (!email.trim()) return "Email is required";
-    if (!password.trim()) return "Password is required";
-    if (password.length < 6) return "Password must be at least 6 characters long";
-    return "";
-  }
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
     try {
-      // Use relative path since we have proxy configured
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Signup failed");
-        } catch (jsonError) {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-      }
-
-      navigate("/login");
-    } catch (error) {
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        setError('Could not connect to server. Please make sure the backend is running.');
-        console.error('Connection error:', error);
-      } else {
-        setError(error.message);
-        console.error('Signup error:', error);
-      }
+      await signup(formData);
+      navigate('/login');
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 to-blue-900">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-md w-full space-y-8"
+        className="w-full max-w-md p-8 space-y-6 bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl"
       >
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">Create your account</h2>
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-white">Create Account</h2>
+          <p className="mt-2 text-gray-400">Join our community and start your journey</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <input type="hidden" name="remember" defaultValue="true" />
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="username" className="sr-only">
-                Username
-              </label>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+              Username
+            </label>
+            <div className="mt-1">
               <input
                 id="username"
                 name="username"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={handleChange}
+                className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Choose a username"
               />
             </div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              Email address
+            </label>
+            <div className="mt-1">
               <input
-                id="email-address"
+                id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
+                className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter your email"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              Password
+            </label>
+            <div className="mt-1">
               <input
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
+                className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Create a password"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300">
+              Confirm Password
+            </label>
+            <div className="mt-1">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Confirm your password"
               />
             </div>
           </div>
@@ -128,7 +134,7 @@ const SignUp = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               {loading ? (
                 <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
@@ -140,25 +146,33 @@ const SignUp = () => {
                   />
                 </svg>
               ) : (
-                "Sign up"
+                "Create Account"
               )}
             </button>
           </div>
         </form>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-400">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Sign in
+            </Link>
+          </p>
+        </div>
+
         {error && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2 text-center text-sm text-red-600">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 text-center text-sm text-red-500"
+          >
             {error}
           </motion.p>
         )}
-        <div className="text-center">
-          <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Already have an account? Sign in
-          </Link>
-        </div>
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
-export default SignUp
-
+export default Signup;

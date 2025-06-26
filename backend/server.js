@@ -62,6 +62,7 @@ app.use('/api/personality', auth, personalityRoutes);
 app.use('/api/therapy', auth, therapyRoutes);
 app.use('/api/therapists', auth, therapistsRoutes);
 
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Server Error:', err);
