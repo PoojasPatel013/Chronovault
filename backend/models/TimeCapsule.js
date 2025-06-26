@@ -1,13 +1,14 @@
-// models/TimeCapsule.js
-import { Schema, model } from 'mongoose';
+// backend/models/TimeCapsule.js
+import mongoose from 'mongoose';
 
-const TimeCapsuleSchema = new Schema({
+const timeCapsuleSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true },
   content: { type: String, required: true },
-  file: { type: String },
-  unlockDate: { type: Date, required: true },
-  createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  isPublic: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
+  mood: { type: String, required: true },
+  weather: { type: String, required: true },
+  timestamp: { type: Date, required: true },
+  unlockDate: { type: Date, required: true }
 });
 
-export default model('TimeCapsule', TimeCapsuleSchema);
+export default mongoose.model('TimeCapsule', timeCapsuleSchema);

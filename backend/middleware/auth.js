@@ -1,33 +1,28 @@
+// backend/middleware/auth.js
 import jwt from 'jsonwebtoken';
-const { verify } = jwt;
+import User from '../models/User.js';
 
-export default async function(req, res, next) {
+export default async (req, res, next) => {
   try {
-    // Get token from Authorization header first
-    let token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.cookies.jwt;
     
-    // If no token in header, check cookies
     if (!token) {
-      token = req.cookies.token;
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // If still no token, return error
-    if (!token) {
-      return res.status(401).json({ 
-        message: 'No token, authorization denied',
-        error: 'Missing authentication token'
-      });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Get the user from the token
+    const user = await User.findById(decoded.userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
     }
 
-    // Verify token
-    const decoded = verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user;
+    req.user = user;
     next();
-  } catch (err) {
-    console.error('Token verification error:', err);
-    return res.status(401).json({ 
-      message: 'Token is not valid',
-      error: err.message
-    });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };

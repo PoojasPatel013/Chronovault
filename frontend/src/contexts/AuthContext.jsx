@@ -1,71 +1,135 @@
-"use client"
+// frontend/src/contexts/AuthContext.jsx
+import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
+import Cookies from 'js-cookie';
 
-import { createContext, useContext, useState, useEffect } from "react"
+const AuthContext = createContext(null);
 
-const AuthContext = createContext(undefined)
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const response = await api.post('/auth/refresh');
+        const token = response.data.token;
+        Cookies.set('jwt', token, { expires: 7 });
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, clear the token and redirect to login
+        Cookies.remove('jwt');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
-}
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (token) {
-      // Verify token and get user data
-      fetchUserData(token)
-    } else {
-      setLoading(false)
-    }
-  }, [])
+    checkAuthStatus();
+  }, []);
 
-  const fetchUserData = async (token) => {
+  const checkAuthStatus = async () => {
     try {
-      const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-      } else {
-        localStorage.removeItem("token")
+      const token = Cookies.get('jwt');
+      if (!token) {
+        setLoading(false);
+        return;
       }
+
+      const response = await api.get('/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setUser(response.data);
     } catch (error) {
-      console.error("Error fetching user data:", error)
-      localStorage.removeItem("token")
+      console.error('Auth status check failed:', error);
+      Cookies.remove('jwt');
+      setUser(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const login = (token, userData) => {
-    localStorage.setItem("token", token)
-    setUser(userData)
-  }
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const token = response.data.token;
+      Cookies.set('jwt', token, { expires: 7 });
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Login failed';
+    }
+  };
 
-  const logout = () => {
-    localStorage.removeItem("token")
-    setUser(null)
-  }
+  const googleLogin = async (token) => {
+    try {
+      const response = await api.post('/auth/google/token', { token });
+      const jwtToken = response.data.token;
+      Cookies.set('jwt', jwtToken, { expires: 7 });
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Google login failed';
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+      Cookies.remove('jwt');
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+      Cookies.remove('jwt');
+      setUser(null);
+    }
+  };
 
   const value = {
     user,
     isAuthenticated: !!user,
-    login,
-    logout,
     loading,
-  }
+    login,
+    googleLogin,
+    logout
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthProvider;
