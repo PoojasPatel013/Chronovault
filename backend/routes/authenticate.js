@@ -37,22 +37,36 @@ router.post('/login', async (req, res) => {
 
 // Google OAuth routes
 router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    accessType: 'offline',
+    prompt: 'consent'
+  })
 );
 
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  (req, res) => {
-    const token = jwt.sign(
-      { userId: req.user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);
+router.get('/google/callback', 
+  passport.authenticate('google', { 
+    failureRedirect: '/api/auth/login',
+    session: false
+  }),
+  async (req, res) => {
+    try {
+      const token = jwt.sign(
+        { userId: req.user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Redirect to frontend with token
+      res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL}/auth/error`);
+    }
   }
 );
 
-// Refresh token
+// Token refresh
 router.post('/refresh', auth, async (req, res) => {
   try {
     const token = jwt.sign(
@@ -81,6 +95,50 @@ router.post('/logout', auth, async (req, res) => {
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Logout failed' });
+  }
+});
+
+// Google token verification
+router.post('/google/token', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    // Verify Google token
+    const ticket = await passport._oauth2Client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const googleId = payload.sub;
+    const email = payload.email;
+
+    // Find or create user
+    let user = await User.findOne({ googleId });
+    if (!user) {
+      user = new User({
+        googleId,
+        email,
+        name: payload.name,
+        avatar: payload.picture
+      });
+      await user.save();
+    }
+
+    // Generate JWT token
+    const jwtToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token: jwtToken, user });
+  } catch (error) {
+    console.error('Google token verification error:', error);
+    res.status(400).json({ message: error.message });
   }
 });
 

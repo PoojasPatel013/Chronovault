@@ -1,17 +1,17 @@
-// frontend/src/components/Login.jsx
+// frontend/src/pages/Login.jsx
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { GoogleLogin } from '@react-oauth/google';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
+import { motion } from 'framer-motion';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,103 +20,105 @@ const Login = () => {
 
     try {
       await login(email, password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      const token = credentialResponse.credential;
-      const response = await fetch(`${API_BASE_URL}/api/auth/google/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token })
-      });
-
-      if (!response.ok) {
-        throw new Error('Google login failed');
-      }
-
-      const data = await response.json();
-      login(data.token, data.user);
-      navigate('/');
-    } catch (error) {
-      setError('Google login failed. Please try again.');
+      await googleLogin(credentialResponse.credential);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 to-blue-900">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md p-8 space-y-6 bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl"
-      >
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white">Welcome Back</h2>
-          <p className="mt-2 text-gray-400">Sign in to continue your journey</p>
-        </div>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen flex items-center justify-center bg-background"
+    >
+      <div className="bg-secondary p-8 rounded-lg shadow-lg w-full max-w-md relative">
+        <h2 className="text-3xl font-bold text-center mb-8 text-accent">
+          Welcome Back
+        </h2>
+        
+        {error && (
+          <div className="bg-red-600 text-red-100 p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email and password fields */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 rounded border border-gray-600 bg-background focus:outline-none focus:ring-2 focus:ring-accent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 rounded border border-gray-600 bg-background focus:outline-none focus:ring-2 focus:ring-accent"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-accent text-white py-2 px-4 rounded hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-700" />
+        <div className="my-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-secondary text-gray-400">Or continue with</span>
+            </div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800 text-gray-400">Or continue with</span>
-          </div>
         </div>
 
-        <div className="mt-6">
-          <GoogleLogin
-            onSuccess={handleGoogleLogin}
-            onError={() => console.log('Login Failed')}
-            useOneTap
-            render={(renderProps) => (
-              <button
-                onClick={renderProps.onClick}
-                disabled={renderProps.disabled}
-                className="w-full flex justify-center py-3 px-4 border border-gray-700 rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M21.35,11.1H12.18V13.82H19.59C19.4,17.18 16.35,20.88 12,21.35c-3.6,0 -6.92,-2.22 -8.48,-5.35c-1.33,2.08 -3.6,3.35 -6.1,3.35c-4.42,0 -8,-3.58 -8,-8s3.58,-8 8,-8s8,3.58 8,8c0,1.33 -0.42,2.48 -1.24,3.42l8.55,8.54l1.41,-1.41L21.35,11.1z"/>
-                </svg>
-                Sign in with Google
-              </button>
-            )}
-          />
-        </div>
+        <GoogleLogin
+          onSuccess={handleGoogleLogin}
+          onError={() => console.log('Login Failed')}
+          theme="outline"
+          size="large"
+          text="continue_with"
+          shape="circle"
+          logo_alignment="center"
+          width="100%"
+        />
 
-        <div className="text-center">
-          <p className="text-sm text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sign up
-            </Link>
-          </p>
-        </div>
-
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 text-center text-sm text-red-500"
+        <p className="mt-6 text-center text-sm text-gray-400">
+          Don't have an account?{' '}
+          <Link 
+            to="/register" 
+            className="text-accent hover:text-accent/90"
           >
-            {error}
-          </motion.p>
-        )}
-      </motion.div>
-    </div>
+            Register here
+          </Link>
+        </p>
+      </div>
+    </motion.div>
   );
 };
 
