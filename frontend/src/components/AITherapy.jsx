@@ -29,96 +29,202 @@ const AITherapy = () => {
     setLoading(true)
     setError("")
 
+    // API Configuration
+    const API_PATH = '/api/therapy/ai-session';
+    const FULL_URL = API_PATH;  // Vite proxy will handle this path
+
+    // Log configuration details
+    console.log('API Configuration Details:', {
+      path: API_PATH,
+      fullUrl: FULL_URL,
+      envUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+      proxyTarget: 'http://localhost:8000'
+    });
+
+    // Ensure we have a valid token
+    const token = Cookies.get('jwt');
+    if (!token) {
+      setError('Authentication token not found. Please log in again.');
+      return;
+    }
+
+    const startTime = performance.now();
+
     try {
-      // Check authentication
+      // Check authentication and token
       if (!isAuthenticated) {
         setError("Please log in to use AI therapy");
         return;
       }
 
+      if (!user.token) {
+        setError("Authentication token is missing. Please log out and log in again.");
+        return;
+      }
+
+      // Log authentication details
+      console.log('User Authentication:', {
+        isAuthenticated,
+        userId: user._id,
+        token: user.token ? 'PRESENT' : 'MISSING',
+        tokenLength: user.token ? user.token.length : 0
+      });
+
       console.log('Sending message to AI:', message);
       
-      // Set up API configuration with correct ports
-      const FRONTEND_PORT = 5173;
-      const BACKEND_PORT = 8000;
-      const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:${BACKEND_PORT}`;
-      const API_PATH = '/therapy/ai-session';
+      // Log request details once
+      console.log('Sending request to:', FULL_URL);
+      console.log('Request body:', { message, userId: user._id });
       
-      console.log('API Configuration:', {
-        baseUrl: API_BASE_URL,
-        path: API_PATH,
-        frontendPort: FRONTEND_PORT,
-        backendPort: BACKEND_PORT
-      });
-      
-      const startTime = performance.now();
-      
-      const res = await fetch(`${API_BASE_URL}${API_PATH}`, {
-        method: "POST",
+      const requestStartTime = performance.now();
+      console.log('Making API request:', {
+        url: FULL_URL,
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${user.token}`
         },
         body: JSON.stringify({ 
           message,
           userId: user._id
-        }),
+        })
       });
 
-      const endTime = performance.now();
-      const responseTime = endTime - startTime;
-      
-      console.log('API Response Time:', responseTime.toFixed(2), 'ms');
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('API Error:', {
-          status: res.status,
-          headers: Object.fromEntries(res.headers.entries()),
-          data: errorData
+      try {
+        console.log('Sending request to proxy:', FULL_URL);
+        const res = await fetch(FULL_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user.token}`
+          },
+          body: JSON.stringify({ 
+            message,
+            userId: user._id
+          })
         });
-        throw new Error(errorData.error || `HTTP error! Status: ${res.status}`);
-      }
 
-      const data = await res.json();
-      
-      console.log('AI Response Details:', {
-        timestamp: new Date().toISOString(),
-        responseLength: data.message?.length,
-        debugInfo: data.debug,
-        conversationLength: conversation.length + 2
-      });
-
-      if (data.error) {
-        throw new Error(data.error || 'Failed to get AI response');
-      }
-
-      // Add debug information to conversation for development
-      const newMessages = [
-        { role: "user", content: message },
-        { 
-          role: "ai", 
-          content: data.message,
-          debug: data.debug,
-          timestamp: new Date().toISOString()
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          const errorTime = performance.now() - startTime;
+          
+          console.error('Proxy request failed:', {
+            status: res.status,
+            headers: Object.fromEntries(res.headers.entries()),
+            data: errorData,
+            requestTime: errorTime.toFixed(2) + 'ms'
+          });
+          throw new Error(errorData.error || `HTTP error! Status: ${res.status}`);
         }
-      ];
 
-      setConversation(prev => [...prev, ...newMessages]);
-      setMessage("");
+        const data = await res.json();
+        const responseTime = performance.now() - startTime;
+
+        console.log('Proxy request succeeded:', {
+          message: data.message,
+          debug: data.debug,
+          responseTime: responseTime.toFixed(2) + 'ms'
+        });
+
+        // Process successful response
+        const messages = [
+          { role: "user", content: message },
+          { 
+            role: "ai", 
+            content: data.message,
+            debug: data.debug,
+            timestamp: new Date().toISOString()
+          }
+        ];
+
+        setConversation(prev => [...prev, ...messages]);
+        setMessage("");
+        setLoading(false);
+        return;
+      } catch (err) {
+        console.error('Proxy request failed:', err);
+        
+        // Try direct request to backend
+        const directUrl = `http://localhost:8000${FULL_URL}`;
+        console.log('Trying direct request to backend:', directUrl);
+        
+        try {
+          const res = await fetch(directUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ 
+              message,
+              userId: user._id
+            })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            const errorTime = performance.now() - startTime;
+            
+            console.error('Direct request failed:', {
+              status: res.status,
+              headers: Object.fromEntries(res.headers.entries()),
+              data: errorData,
+              requestTime: errorTime.toFixed(2) + 'ms'
+            });
+            throw new Error(errorData.error || `HTTP error! Status: ${res.status}`);
+          }
+
+          const data = await res.json();
+          const responseTime = performance.now() - startTime;
+
+          console.log('Direct request succeeded:', {
+            message: data.message,
+            debug: data.debug,
+            responseTime: responseTime.toFixed(2) + 'ms'
+          });
+
+          // Process successful response
+          const messages = [
+            { role: "user", content: message },
+            { 
+              role: "ai", 
+              content: data.message,
+              debug: data.debug,
+              timestamp: new Date().toISOString()
+            }
+          ];
+
+          setConversation(prev => [...prev, ...messages]);
+          setMessage("");
+          setLoading(false);
+          return;
+        } catch (directErr) {
+          const errorMessage = directErr instanceof Error ? directErr.message : 'An unknown error occurred';
+          setError(`Error: ${errorMessage}`);
+          setLoading(false);
+          
+          console.error("Error fetching AI response:", {
+            error: directErr,
+            message: errorMessage,
+            url: directUrl,
+            requestTime: performance.now() - startTime,
+            request: {
+              message,
+              userId: user?._id
+            },
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${user.token}`
+            }
+          });
+        }
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(`Error: ${errorMessage}`);
-      console.error("Error fetching AI response:", {
-        error: err,
-        message: errorMessage,
-        status: err?.status,
-        url: `${API_BASE_URL}${API_PATH}`,
-        requestTime: performance.now() - startTime,
-        stack: err?.stack
-      });
+      console.error('Error fetching AI response:', err);
+      setError('Failed to get AI response');
+      setLoading(false);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

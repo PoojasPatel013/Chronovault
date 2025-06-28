@@ -78,9 +78,13 @@ const Home = () => {
           variants={containerVariants}
           className="relative z-10 max-w-4xl mx-auto px-4 text-center"
         >
+          {/* <motion.div
+            variants={itemVariants}
+            className="relative z-10 max-w-4xl mx-auto px-4 text-center text-7xl font-bold mb-6 bg-clip"
+          > Here to keep you sane </motion.div> */}
           <motion.h1
             variants={itemVariants}
-            className="text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-text-light-primary to-text-light-secondary dark:from-text-dark-primary dark:to-text-dark-secondary"
+            className="text-7xl font-bold mb-6 bg-clip-text "
           >
             {isAuthenticated ? `Welcome back, ${user?.username}` : "Preserve Your Journey"}
           </motion.h1>
