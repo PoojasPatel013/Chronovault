@@ -1,10 +1,12 @@
 // frontend/src/components/PersonalityTest.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Cookies from 'js-cookie';
+import { FaChevronRight, FaChevronLeft, FaMoon, FaSun } from 'react-icons/fa';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 export default function PersonalityTest() {
   const [questions, setQuestions] = useState([]);
@@ -13,6 +15,7 @@ export default function PersonalityTest() {
   const [result, setResult] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, toggleTheme } = React.useContext(ThemeContext);
 
   useEffect(() => {
     fetchQuestions();
@@ -90,13 +93,27 @@ export default function PersonalityTest() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8">
+    <div className={`max-w-4xl mx-auto p-8 bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-2xl shadow-lg ${theme === 'dark' ? 'dark:shadow-gray-800/50' : ''}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8"
       >
-        <h1 className="text-4xl font-serif font-bold text-center text-primary mb-8">Personality Assessment</h1>
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center mb-12"
+        >
+          <h1 className={`text-4xl font-serif font-bold text-${theme === 'dark' ? 'white' : 'black'} mb-4`}>
+            Personality Assessment
+          </h1>
+          <p className={`text-lg text-${theme === 'dark' ? 'gray-400' : 'black'}/70`}>
+            Discover your unique personality traits and strengths
+          </p>
+        </motion.div>
+        <h1 className={`text-4xl font-serif font-bold text-center text-${theme === 'dark' ? 'white' : 'black'} mb-8`}>
+          Personality Assessment
+        </h1>
         
         {!questions.length && (
           <div className="text-center">
@@ -104,7 +121,7 @@ export default function PersonalityTest() {
               onClick={fetchQuestions}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-lg font-serif text-xl tracking-wide transition-all hover:bg-primary-hover"
+              className={`inline-flex items-center px-8 py-4 bg-${theme === 'dark' ? 'gray-800' : 'white'} text-${theme === 'dark' ? 'white' : 'black'} rounded-lg font-serif text-xl tracking-wide transition-all hover:bg-${theme === 'dark' ? 'gray-800' : 'white'}/90`}
             >
               Begin Your Journey
             </motion.button>
@@ -116,26 +133,39 @@ export default function PersonalityTest() {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-secondary rounded-lg shadow-sm mb-6"
+            className={`bg-${theme === 'dark' ? 'gray-700' : 'white'} rounded-lg shadow-sm mb-6`}
           >
-            <div className="space-y-4 p-6">
-              <h3 className="font-serif text-xl font-semibold">{question.text}</h3>
+            <div className="space-y-4">
+              <h3 className={`text-xl font-semibold text-${theme === 'dark' ? 'white' : 'black'}`}>{question.text}</h3>
               <div className="space-y-3">
                 {question.options.map((option, optionIndex) => (
-                  <label 
+                  <motion.label
                     key={optionIndex}
-                    className="flex items-start space-x-3 p-3 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: optionIndex * 0.1 }}
+                    className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-${theme === 'dark' ? 'gray-800' : 'white'}/10 dark:hover:bg-gray-800/30 transition-colors duration-300`}
                   >
                     <input
                       type="radio"
                       name={`question-${index}`}
                       value={optionIndex}
                       checked={answers[index] === optionIndex}
-                      onChange={() => handleAnswerChange(index, optionIndex)}
-                      className="h-5 w-5 text-primary border-2 border-primary/30"
+                      onChange={(e) => handleAnswerChange(index, parseInt(e.target.value))}
+                      className="accent-primary scale-125"
                     />
-                    <span className="text-lg flex-1">{option.text}</span>
-                  </label>
+                    <div className="flex-1">
+                      <span className="text-white/90 group-hover:text-white font-medium">{option.text}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        answers[index] === optionIndex ? 'bg-primary text-white' : 'bg-background/20 text-white/70'
+                      }`}>
+                        {option.dimension}
+                      </span>
+                      <span className="text-white/60">{option.weight} pts</span>
+                    </div>
+                  </motion.label>
                 ))}
               </div>
             </div>
@@ -148,25 +178,35 @@ export default function PersonalityTest() {
           animate={{ opacity: 1 }}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
-            <motion.button
-              type="submit"
-              disabled={loading || answers.length !== questions.length}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary text-white rounded-lg py-4 font-serif text-xl tracking-wide transition-all hover:bg-primary-hover disabled:opacity-50"
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12 relative z-10"
             >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                'Reveal Your Personality'
-              )}
-            </motion.button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex-1 py-4 bg-background/20 text-white/70 dark:bg-gray-800/30 dark:text-gray-400 rounded-xl font-serif text-lg tracking-wide transition-all hover:bg-background/30 dark:hover:bg-gray-800/40 hover:text-white"
+              >
+                <FaChevronLeft className="mr-2" />
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 py-4 bg-gradient-to-r from-primary to-secondary rounded-xl font-serif text-lg tracking-wide transition-all shadow-lg dark:shadow-gray-800/50 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <FaFire className="mr-2 animate-spin" />
+                    Calculating...
+                  </>
+                ) : (
+                  <>
+                    <FaChevronRight className="mr-2" />
+                    Reveal Your Personality
+                  </>
+                )}
+              </button>
+            </motion.div>
           </form>
         </motion.div>
       </motion.div>

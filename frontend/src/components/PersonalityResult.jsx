@@ -4,11 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { FaStar, FaFire, FaLightbulb, FaMoon, FaSun } from 'react-icons/fa';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 const PersonalityResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const result = location.state?.result;
+  const { theme, toggleTheme } = React.useContext(ThemeContext);
 
   useEffect(() => {
     // If no result is available, redirect to personality test
@@ -32,98 +35,129 @@ const PersonalityResult = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className={`min-h-screen bg-${theme === 'dark' ? 'background-dark' : 'background'}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="container mx-auto px-4 py-16"
       >
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-4xl font-serif font-bold mb-4">Your Personality Profile</h1>
-            <h2 className="text-3xl font-serif font-semibold text-primary mb-8">{result.type}</h2>
-            <p className="text-xl text-white/70 mb-8">{result.name}</p>
-            <div className="mt-4 space-y-4">
-              <p className="text-lg text-white/70">Scores:</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="font-semibold">E: </span>{result.scores.E}%
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-4xl mx-auto"
+        >
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <motion.h1 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-5xl font-serif font-bold mb-6 text-gradient bg-clip-text bg-gradient-to-r from-primary to-secondary"
+              >
+                Your Personality Profile
+              </motion.h1>
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center gap-4"
+              >
+                <div className="bg-primary/10 rounded-full p-4">
+                  <h2 className="text-4xl font-serif font-bold text-primary">{result.type}</h2>
                 </div>
-                <div>
-                  <span className="font-semibold">I: </span>{result.scores.I}%
+                <p className="text-2xl text-white/80 font-serif italic">{result.name}</p>
+              </motion.div>
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="mt-8"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold">Dimension Scores</h3>
+                  <button 
+                    onClick={() => toggleTheme()}
+                    className="p-2 rounded-lg hover:bg-background/10 dark:hover:bg-gray-800/30 transition-colors"
+                  >
+                    {theme === 'dark' ? (
+                      <FaSun className="w-5 h-5 text-yellow-400" />
+                    ) : (
+                      <FaMoon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    )}
+                  </button>
                 </div>
-                <div>
-                  <span className="font-semibold">S: </span>{result.scores.S}%
-                </div>
-                <div>
-                  <span className="font-semibold">N: </span>{result.scores.N}%
-                </div>
-                <div>
-                  <span className="font-semibold">T: </span>{result.scores.T}%
-                </div>
-                <div>
-                  <span className="font-semibold">F: </span>{result.scores.F}%
-                </div>
-                <div>
-                  <span className="font-semibold">J: </span>{result.scores.J}%
-                </div>
-                <div>
-                  <span className="font-semibold">P: </span>{result.scores.P}%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-primary/5 rounded-lg shadow-lg mb-16">
-            <div className="space-y-8 p-8">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/50 to-primary opacity-10 rounded-lg"></div>
-                <div className="relative p-6 rounded-lg bg-secondary">
-                  <h3 className="font-serif text-2xl font-semibold mb-4">Your Personality Traits</h3>
-                  <div className="space-y-6">
-                    <div className="space-y-4">
-                      <h4 className="font-serif text-xl font-semibold">Personality Type</h4>
-                      <div className="bg-primary text-white px-6 py-3 rounded-lg text-center">
-                        <span className="text-2xl font-serif">{result.type}</span>
+                <div className="grid grid-cols-2 gap-6">
+                  {Object.entries(result.scores).map(([dimension, score]) => (
+                    <motion.div
+                      key={dimension}
+                      initial={{ width: '0%' }}
+                      animate={{ width: `${score}%` }}
+                      className="relative bg-secondary/20 rounded-full overflow-hidden h-10 relative z-0"
+                    >
+                      <div className="h-full bg-gradient-to-r from-primary to-secondary flex items-center px-4 relative bg-white/5 dark:bg-gray-800/50">
+                        <div className="flex flex-col items-center text-white absolute inset-0 flex items-center justify-center">
+                          <span className="text-sm font-semibold">{dimension}</span>
+                          <span className="text-2xl font-bold">{score}%</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="font-serif text-xl font-semibold">Description</h4>
-                      <p className="text-lg text-white/70">{result.description}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            <div className="bg-gradient-to-b from-background/5 to-background/10 rounded-2xl shadow-xl mb-16">
+              <div className="space-y-8 p-8">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/50 to-primary opacity-10 rounded-lg"></div>
+                  <div className="relative p-6 rounded-lg bg-secondary">
+                    <h3 className="font-serif text-2xl font-semibold mb-4">Your Personality Traits</h3>
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <h4 className="font-serif text-xl font-semibold">Personality Type</h4>
+                        <div className="bg-primary text-white px-6 py-3 rounded-lg text-center">
+                          <span className="text-2xl font-serif">{result.type}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <h4 className="font-serif text-xl font-semibold">Description</h4>
+                        <p className="text-lg text-white/70">{result.description}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {result.traits.map((trait, index) => (
-                  <motion.div 
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-secondary rounded-lg shadow-sm"
-                  >
-                    <div className="space-y-4 p-6">
-                      <h4 className="font-serif text-xl font-semibold">Trait {index + 1}</h4>
-                      <p className="text-lg text-white/70">{trait}</p>
-                    </div>
-                  </motion.div>
-                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {result.traits.map((trait, index) => (
+                    <motion.div 
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-gradient-to-r from-background/10 to-background/20 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <div className="space-y-4 p-6">
+                        <div className="flex items-center gap-3">
+                          <FaStar className="text-yellow-400" />
+                          <h4 className="font-serif text-xl font-semibold">Trait {index + 1}</h4>
+                        </div>
+                        <p className="text-lg text-white/80">{trait}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="text-center">
-            <motion.button
-              onClick={() => navigate('/dashboard')}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-lg font-serif text-xl tracking-wide transition-all hover:bg-primary-hover"
-            >
-              Return to Dashboard
-            </motion.button>
+            <div className="fixed bottom-4 right-4 z-50">
+              <motion.button
+                onClick={() => navigate('/dashboard')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary to-secondary rounded-xl font-serif text-xl tracking-wide transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                <FaLightbulb className="mr-2" />
+                Return to Dashboard
+              </motion.button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );
