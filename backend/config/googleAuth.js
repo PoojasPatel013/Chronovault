@@ -3,9 +3,10 @@ import User from '../models/User.js';
 
 export const getGoogleAuthUrl = async () => {
   try {
+    // Update getGoogleAuthUrl in googleAuth.js
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID,
-      redirect_uri: 'http://localhost:8000/api/auth/google/callback',
+      redirect_uri: `${process.env.FRONTEND_URL}/api/auth/google/callback`,
       response_type: 'code',
       scope: 'openid profile email',
       access_type: 'offline',

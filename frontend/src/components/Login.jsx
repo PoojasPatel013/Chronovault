@@ -19,21 +19,18 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      await googleLogin(credentialResponse.credential);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
   };
 
   return (

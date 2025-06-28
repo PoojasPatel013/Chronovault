@@ -15,13 +15,14 @@ router.get('/questions', auth, (req, res) => {
 // Protected endpoint to calculate personality type
 router.post('/calculate', auth, async (req, res) => {
   try {
+    console.log('Received answers:', req.body);
     const { answers } = req.body;
     
     if (!answers || !Array.isArray(answers) || answers.length !== personalityQuestions.length) {
       return res.status(400).json({ message: 'Invalid answers format' });
     }
 
-    // Initialize dimension counters
+    // Initialize dimension counters with weights
     const dimensions = {
       E: 0,
       I: 0,
@@ -33,22 +34,43 @@ router.post('/calculate', auth, async (req, res) => {
       P: 0
     };
 
-    // Tally answers
+    // Calculate total possible score for each dimension
+    const totalPossibleScore = personalityQuestions.length;
+
+    // Tally answers with weights
+    console.log('Processing answers:', answers);
     answers.forEach((answer, index) => {
       if (answer < 0 || answer >= personalityQuestions[index].options.length) {
         throw new Error('Invalid answer index');
       }
-      const dimension = personalityQuestions[index].options[answer].dimension;
-      dimensions[dimension]++;
+      const option = personalityQuestions[index].options[answer];
+      dimensions[option.dimension] += option.weight;
     });
 
-    // Determine dominant dimensions
+    // Normalize scores (0-100%)
+    Object.keys(dimensions).forEach(dimension => {
+      dimensions[dimension] = Math.round((dimensions[dimension] / totalPossibleScore) * 100);
+    });
+
+    // Determine dominant dimensions with score thresholds
     const type = [
-      dimensions.E > dimensions.I ? 'E' : 'I',
-      dimensions.S > dimensions.N ? 'S' : 'N',
-      dimensions.T > dimensions.F ? 'T' : 'F',
-      dimensions.J > dimensions.P ? 'J' : 'P'
+      dimensions.E >= 50 ? 'E' : 'I',
+      dimensions.S >= 50 ? 'S' : 'N',
+      dimensions.T >= 50 ? 'T' : 'F',
+      dimensions.J >= 50 ? 'J' : 'P'
     ].join('');
+
+    // Calculate confidence scores
+    const confidenceScores = {
+      E: dimensions.E >= 50 ? dimensions.E : 100 - dimensions.I,
+      I: dimensions.I >= 50 ? dimensions.I : 100 - dimensions.E,
+      S: dimensions.S >= 50 ? dimensions.S : 100 - dimensions.N,
+      N: dimensions.N >= 50 ? dimensions.N : 100 - dimensions.S,
+      T: dimensions.T >= 50 ? dimensions.T : 100 - dimensions.F,
+      F: dimensions.F >= 50 ? dimensions.F : 100 - dimensions.T,
+      J: dimensions.J >= 50 ? dimensions.J : 100 - dimensions.P,
+      P: dimensions.P >= 50 ? dimensions.P : 100 - dimensions.J
+    };
 
     // Save personality type to user
     const user = await User.findById(req.user._id);
@@ -74,7 +96,27 @@ router.post('/calculate', auth, async (req, res) => {
       type,
       name: personality.name,
       description: personality.description,
-      traits: personality.traits
+      traits: personality.traits,
+      scores: {
+        E: dimensions.E,
+        I: dimensions.I,
+        S: dimensions.S,
+        N: dimensions.N,
+        T: dimensions.T,
+        F: dimensions.F,
+        J: dimensions.J,
+        P: dimensions.P
+      },
+      confidence: {
+        E: confidenceScores.E,
+        I: confidenceScores.I,
+        S: confidenceScores.S,
+        N: confidenceScores.N,
+        T: confidenceScores.T,
+        F: confidenceScores.F,
+        J: confidenceScores.J,
+        P: confidenceScores.P
+      }
     });
   } catch (error) {
     console.error('Error calculating personality:', error);

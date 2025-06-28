@@ -1,8 +1,10 @@
 // frontend/src/components/PersonalityTest.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import Cookies from 'js-cookie';
 
 export default function PersonalityTest() {
   const [questions, setQuestions] = useState([]);
@@ -10,10 +12,24 @@ export default function PersonalityTest() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchQuestions();
+  }, []);
 
   const fetchQuestions = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     try {
-      const response = await axios.get('/api/personality/questions');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/personality/questions`, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('jwt')}`
+        }
+      });
       if (response.data && Array.isArray(response.data)) {
         setQuestions(response.data);
       } else {
@@ -41,14 +57,24 @@ export default function PersonalityTest() {
       }
 
       // Format the answers array
-      const formattedAnswers = answers.map(answer => {
-        if (answer === undefined) return 0; // Default to first option if not answered
-        return answer;
+      const formattedAnswers = answers.map((answer, index) => {
+        // If answer is undefined or invalid, default to first option (index 0)
+        if (answer === undefined || typeof answer !== 'number' || answer < 0 || answer >= questions[index].options.length) {
+          return 0; // Default to first option
+        }
+        return parseInt(answer); // Ensure we're sending a number
       });
 
-      const response = await axios.post('/api/personality/calculate', { answers: formattedAnswers });
-      setResult(response.data);
-      navigate('/personality-result');
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/personality/calculate`, 
+        { answers: formattedAnswers },
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get('jwt')}`
+          }
+        }
+      );
+      const resultData = response.data;
+      navigate('/personality-result', { state: { result: resultData } });
     } catch (error) {
       console.error('Error calculating personality:', error);
       alert(error.response?.data?.message || 'Failed to calculate personality type. Please try again.');

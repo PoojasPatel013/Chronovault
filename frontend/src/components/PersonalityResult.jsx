@@ -8,11 +8,10 @@ import { useLocation } from 'react-router-dom';
 const PersonalityResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, personalityType } = useAuth();
-  const result = location.state?.result || personalityType;
+  const result = location.state?.result;
 
   useEffect(() => {
-    // If no personality type is available, redirect to personality test
+    // If no result is available, redirect to personality test
     if (!result) {
       navigate('/personality-test');
     }
@@ -44,6 +43,35 @@ const PersonalityResult = () => {
             <h1 className="text-4xl font-serif font-bold mb-4">Your Personality Profile</h1>
             <h2 className="text-3xl font-serif font-semibold text-primary mb-8">{result.type}</h2>
             <p className="text-xl text-white/70 mb-8">{result.name}</p>
+            <div className="mt-4 space-y-4">
+              <p className="text-lg text-white/70">Scores:</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="font-semibold">E: </span>{result.scores.E}%
+                </div>
+                <div>
+                  <span className="font-semibold">I: </span>{result.scores.I}%
+                </div>
+                <div>
+                  <span className="font-semibold">S: </span>{result.scores.S}%
+                </div>
+                <div>
+                  <span className="font-semibold">N: </span>{result.scores.N}%
+                </div>
+                <div>
+                  <span className="font-semibold">T: </span>{result.scores.T}%
+                </div>
+                <div>
+                  <span className="font-semibold">F: </span>{result.scores.F}%
+                </div>
+                <div>
+                  <span className="font-semibold">J: </span>{result.scores.J}%
+                </div>
+                <div>
+                  <span className="font-semibold">P: </span>{result.scores.P}%
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="bg-primary/5 rounded-lg shadow-lg mb-16">
@@ -68,7 +96,7 @@ const PersonalityResult = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {result.keyTraits.map((trait, index) => (
+                {result.traits.map((trait, index) => (
                   <motion.div 
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
@@ -76,8 +104,8 @@ const PersonalityResult = () => {
                     className="bg-secondary rounded-lg shadow-sm"
                   >
                     <div className="space-y-4 p-6">
-                      <h4 className="font-serif text-xl font-semibold">{trait.title}</h4>
-                      <p className="text-lg text-white/70">{trait.description}</p>
+                      <h4 className="font-serif text-xl font-semibold">Trait {index + 1}</h4>
+                      <p className="text-lg text-white/70">{trait}</p>
                     </div>
                   </motion.div>
                 ))}

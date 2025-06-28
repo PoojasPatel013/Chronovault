@@ -5,8 +5,9 @@ import Cookies from 'js-cookie';
 
 const AuthContext = createContext(null);
 
+// Update the API configuration in AuthContext.jsx
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5173/api', // Changed from 8000 to 5173
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
@@ -52,43 +53,43 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const token = Cookies.get('jwt');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await api.get('/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Auth status check failed:', error);
-      Cookies.remove('jwt');
-      setUser(null);
-    } finally {
+    const token = Cookies.get('jwt');
+    if (token) {
+      api.defaults.headers.Authorization = `Bearer ${token}`;
+      // Verify token and fetch user data
+      api.get('/auth/me')
+        .then((response) => {
+          setUser(response.data);
+        })
+        .catch((error) => {
+          console.error('Token verification failed:', error);
+          Cookies.remove('jwt');
+          setError('Session expired. Please login again.');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
       setLoading(false);
     }
-  };
+  }, []);
 
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const token = response.data.token;
+      const { token, user } = response.data;
       Cookies.set('jwt', token, { expires: 7 });
-      setUser(response.data.user);
-      return response.data;
+      api.defaults.headers.Authorization = `Bearer ${token}`;
+      setUser(user);
+      setError('');
+      return true;
     } catch (error) {
-      throw error.response?.data?.message || 'Login failed';
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 

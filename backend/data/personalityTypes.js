@@ -1,6 +1,5 @@
 // backend/data/personalityTypes.js
-export const personalityTypes = 
-    [
+export const personalityTypes = [
         {
           "type": "INTJ",
           "name": "Architect",

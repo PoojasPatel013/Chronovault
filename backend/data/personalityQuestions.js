@@ -1,115 +1,93 @@
-// backend/data/personalityQuestions.js
 export const personalityQuestions = [
+  // Extraversion vs Introversion (E/I)
   {
     text: "You're planning a weekend. Do you prefer:",
     options: [
-      { text: "Going out with friends", dimension: "E" },
-      { text: "Having time alone to recharge", dimension: "I" }
-    ]
-  },
-  {
-    text: "When tackling a problem, you:",
-    options: [
-      { text: "Look for practical solutions based on facts", dimension: "S" },
-      { text: "Explore imaginative or theoretical ideas", dimension: "N" }
-    ]
-  },
-  {
-    text: "In group projects, you tend to:",
-    options: [
-      { text: "Jump in and coordinate everyone", dimension: "E" },
-      { text: "Focus on your own tasks quietly", dimension: "I" }
-    ]
-  },
-  {
-    text: "When making decisions, you rely on:",
-    options: [
-      { text: "Objective logic", dimension: "T" },
-      { text: "Personal values and feelings", dimension: "F" }
-    ]
-  },
-  {
-    text: "When someone asks your opinion, you tend to:",
-    options: [
-      { text: "Be direct and honest", dimension: "T" },
-      { text: "Be considerate of their feelings", dimension: "F" }
-    ]
-  },
-  {
-    text: "Your schedule is usually:",
-    options: [
-      { text: "Well-organized and planned", dimension: "J" },
-      { text: "Flexible and spontaneous", dimension: "P" }
+      { text: "Going out with friends", dimension: "E", weight: 1 },
+      { text: "Having time alone to recharge", dimension: "I", weight: 1 }
     ]
   },
   {
     text: "At a party, you tend to:",
     options: [
-      { text: "Talk to as many people as you can", dimension: "E" },
-      { text: "Stick with a small group or one-on-one chats", dimension: "I" }
+      { text: "Talk to as many people as you can", dimension: "E", weight: 1 },
+      { text: "Stick with a small group or one-on-one chats", dimension: "I", weight: 1 }
     ]
   },
   {
-    text: "When learning something new, you prefer:",
+    text: "When making plans, you:",
     options: [
-      { text: "Real-world applications", dimension: "S" },
-      { text: "Exploring abstract concepts", dimension: "N" }
+      { text: "Like to make them quickly and share them with others", dimension: "E", weight: 1 },
+      { text: "Prefer to think about them alone first", dimension: "I", weight: 1 }
+    ]
+  },
+
+  // Sensing vs Intuition (S/N)
+  {
+    text: "When tackling a problem, you:",
+    options: [
+      { text: "Look for practical solutions based on facts", dimension: "S", weight: 1 },
+      { text: "Explore imaginative or theoretical ideas", dimension: "N", weight: 1 }
     ]
   },
   {
-    text: "You would rather work in a team that is:",
+    text: "When reading a book, you:",
     options: [
-      { text: "Well-structured with clear rules", dimension: "J" },
-      { text: "Open-ended and adaptive", dimension: "P" }
+      { text: "Focus on the concrete details and facts", dimension: "S", weight: 1 },
+      { text: "Imagine what could happen beyond the story", dimension: "N", weight: 1 }
     ]
   },
   {
-    text: "In a debate, you tend to:",
+    text: "When making decisions, you:",
     options: [
-      { text: "Use logical arguments", dimension: "T" },
-      { text: "Consider how people might feel", dimension: "F" }
+      { text: "Rely on past experiences and proven methods", dimension: "S", weight: 1 },
+      { text: "Consider future possibilities and new approaches", dimension: "N", weight: 1 }
+    ]
+  },
+
+  // Thinking vs Feeling (T/F)
+  {
+    text: "When making decisions, you rely on:",
+    options: [
+      { text: "Objective logic", dimension: "T", weight: 1 },
+      { text: "Personal values and feelings", dimension: "F", weight: 1 }
     ]
   },
   {
-    text: "How do you handle surprises?",
+    text: "When someone asks your opinion, you tend to:",
     options: [
-      { text: "They throw me off; I prefer plans", dimension: "J" },
-      { text: "I adapt and go with the flow", dimension: "P" }
+      { text: "Be direct and honest", dimension: "T", weight: 1 },
+      { text: "Be considerate of their feelings", dimension: "F", weight: 1 }
     ]
   },
   {
-    text: "When working on a project, you prefer to:",
+    text: "When evaluating a new idea, you:",
     options: [
-      { text: "Stick to proven methods", dimension: "S" },
-      { text: "Try something novel", dimension: "N" }
+      { text: "Analyze its practicality and logic", dimension: "T", weight: 1 },
+      { text: "Consider how it will affect people", dimension: "F", weight: 1 }
+    ]
+  },
+
+  // Judging vs Perceiving (J/P)
+  {
+    text: "Your schedule is usually:",
+    options: [
+      { text: "Well-organized and planned", dimension: "J", weight: 1 },
+      { text: "Flexible and spontaneous", dimension: "P", weight: 1 }
     ]
   },
   {
-    text: "During stressful times, you recharge by:",
+    text: "When working on a project, you:",
     options: [
-      { text: "Being with others for support", dimension: "E" },
-      { text: "Spending quiet time alone", dimension: "I" }
+      { text: "Like to complete it as soon as possible", dimension: "J", weight: 1 },
+      { text: "Prefer to keep your options open", dimension: "P", weight: 1 }
     ]
   },
   {
-    text: "Which best describes you?",
+    text: "Your workspace is typically:",
     options: [
-      { text: "Practical and realistic", dimension: "S" },
-      { text: "Imaginative and visionary", dimension: "N" }
-    ]
-  },
-  {
-    text: "You prefer work that is:",
-    options: [
-      { text: "Clearly structured with goals", dimension: "J" },
-      { text: "Open-ended with options to change", dimension: "P" }
-    ]
-  },
-  {
-    text: "In your social life, you prefer:",
-    options: [
-      { text: "Meeting many new people", dimension: "E" },
-      { text: "Sticking to familiar friends", dimension: "I" }
+      { text: "Organized and tidy", dimension: "J", weight: 1 },
+      { text: "Flexible and adaptable", dimension: "P", weight: 1 }
     ]
   }
 ];
