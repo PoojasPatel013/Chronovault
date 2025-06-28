@@ -53,8 +53,15 @@ router.post('/calculate', auth, async (req, res) => {
     // Save personality type to user
     const user = await User.findById(req.user._id);
     if (user) {
+      // If user doesn't have a name, use their email as a fallback
+      if (!user.name) {
+        user.name = user.email.split('@')[0];
+      }
       user.personalityType = type;
       await user.save();
+    } else {
+      console.error('User not found:', req.user._id);
+      throw new Error('User not found');
     }
 
     // Find matching personality type

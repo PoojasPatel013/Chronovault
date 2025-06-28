@@ -14,11 +14,18 @@ export default function PersonalityTest() {
   const fetchQuestions = async () => {
     try {
       const response = await axios.get('/api/personality/questions');
-      setQuestions(response.data);
+      if (response.data && Array.isArray(response.data)) {
+        setQuestions(response.data);
+      } else {
+        console.error('Invalid questions data format:', response.data);
+        throw new Error('Invalid questions data format');
+      }
     } catch (error) {
       console.error('Error fetching questions:', error);
       if (error.response?.status === 401) {
         navigate('/login');
+      } else {
+        alert('Failed to load personality questions. Please try again later.');
       }
     }
   };
@@ -28,11 +35,23 @@ export default function PersonalityTest() {
     setLoading(true);
     
     try {
-      const response = await axios.post('/api/personality/calculate', { answers });
+      // Ensure we have all questions answered
+      if (!answers || answers.length !== questions.length) {
+        throw new Error('Please answer all questions');
+      }
+
+      // Format the answers array
+      const formattedAnswers = answers.map(answer => {
+        if (answer === undefined) return 0; // Default to first option if not answered
+        return answer;
+      });
+
+      const response = await axios.post('/api/personality/calculate', { answers: formattedAnswers });
       setResult(response.data);
       navigate('/personality-result');
     } catch (error) {
       console.error('Error calculating personality:', error);
+      alert(error.response?.data?.message || 'Failed to calculate personality type. Please try again.');
     } finally {
       setLoading(false);
     }
