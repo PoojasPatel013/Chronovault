@@ -9,6 +9,7 @@ import SignUp from './components/SignUp';
 import TimeCapsule from './components/TimeCapsule';
 import CommunityFeed from './components/CommunityFeed';
 import PersonalityTest from './components/PersonalityTest';
+import PersonalityResult from './components/PersonalityResult';
 import AITherapy from './components/AITherapy';
 import BookSession from './components/BookSession';
 import UserDashboard from './components/UserDashboard';
@@ -18,10 +19,11 @@ import Settings from './components/Settings';
 function App() {
   return (
     <AuthProvider>
-      <div className="App">
+      <div className="min-h-screen bg-background">
         <Header />
-        <Routes>
-        <Route path="/" element={<Home />} />
+        <div className="container mx-auto px-4 py-8">
+          <Routes>
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route
@@ -45,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PersonalityTest />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/personality-result"
+              element={
+                <ProtectedRoute>
+                  <PersonalityResult />
                 </ProtectedRoute>
               }
             />
@@ -73,11 +83,12 @@ function App() {
               }
             />
             <Route path="/settings" element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } />
-        </Routes>
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </div>
       </div>
     </AuthProvider>
   );

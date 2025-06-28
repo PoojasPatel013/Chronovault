@@ -1,26 +1,32 @@
 // backend/routes/authenticate.js
 import { Router } from 'express';
-import passport from 'passport';
-import auth from '../middleware/auth.js';
-import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
+import { getGoogleAuthUrl, getUserInfo, verifyToken } from '../config/googleAuth.js';
+import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import { createError } from '../utils/error.js';
 
 const router = Router();
 
-// Login
-router.post('/login', async (req, res) => {
+
+
+// Email/password login
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    
+    if (!email || !password) {
+      return next(createError(400, 'Email and password are required'));
+    }
 
-    if (!user || !user.password) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(createError(401, 'Invalid credentials'));
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return next(createError(401, 'Invalid credentials'));
     }
 
     const token = jwt.sign(
@@ -31,114 +37,118 @@ router.post('/login', async (req, res) => {
 
     res.json({ token, user });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Login error:', error);
+    next(createError(500, 'Server error'));
   }
 });
 
 // Google OAuth routes
-router.get('/google',
-  passport.authenticate('google', {
-    scope: ['profile', 'email'],
-    accessType: 'offline',
-    prompt: 'consent'
-  })
-);
-
-router.get('/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: '/api/auth/login',
-    session: false
-  }),
-  async (req, res) => {
-    try {
-      const token = jwt.sign(
-        { userId: req.user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      // Redirect to frontend with token
-      res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);
-    } catch (error) {
-      console.error('Google callback error:', error);
-      res.redirect(`${process.env.FRONTEND_URL}/auth/error`);
-    }
-  }
-);
-
-// Token refresh
-router.post('/refresh', auth, async (req, res) => {
+router.get('/google', async (req, res, next) => {
   try {
-    const token = jwt.sign(
-      { userId: req.user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    res.json({ token });
+    const authUrl = await getGoogleAuthUrl();
+    res.redirect(authUrl);
   } catch (error) {
-    res.status(500).json({ message: 'Token refresh failed' });
+    console.error('Failed to get Google auth URL:', error);
+    next(createError(500, 'Failed to get Google auth URL'));
   }
 });
 
-// Get current user
-router.get('/me', auth, async (req, res) => {
+router.get('/google/callback', async (req, res, next) => {
   try {
-    res.json(req.user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Logout
-router.post('/logout', auth, async (req, res) => {
-  try {
-    res.json({ message: 'Logged out successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Logout failed' });
-  }
-});
-
-// Google token verification
-router.post('/google/token', async (req, res) => {
-  try {
-    const { token } = req.body;
-    if (!token) {
-      return res.status(400).json({ message: 'No token provided' });
+    const { code } = req.query;
+    if (!code) {
+      return next(createError(400, 'No code provided'));
     }
 
-    // Verify Google token
-    const ticket = await passport._oauth2Client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
+    const userInfo = await getUserInfo(code);
+    let user = await User.findOne({ googleId: userInfo.id });
 
-    const payload = ticket.getPayload();
-    const googleId = payload.sub;
-    const email = payload.email;
-
-    // Find or create user
-    let user = await User.findOne({ googleId });
     if (!user) {
       user = new User({
-        googleId,
-        email,
-        name: payload.name,
-        avatar: payload.picture
+        googleId: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+        avatar: userInfo.picture
       });
       await user.save();
     }
 
-    // Generate JWT token
-    const jwtToken = jwt.sign(
+    const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.json({ token: jwtToken, user });
+    // Redirect back to frontend with token
+    res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
   } catch (error) {
-    console.error('Google token verification error:', error);
-    res.status(400).json({ message: error.message });
+    console.error('Google callback error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/error`);
+  }
+});
+
+// Token refresh
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return next(createError(400, 'No token provided'));
+    }
+
+    try {
+      // Verify existing token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+
+      if (!user) {
+        return next(createError(404, 'User not found'));
+      }
+
+      // Generate new token with same expiry
+      const newToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({ token: newToken });
+    } catch (tokenError) {
+      // Handle token verification errors
+      if (tokenError.name === 'TokenExpiredError') {
+        return next(createError(401, 'Token has expired'));
+      }
+      return next(createError(401, 'Invalid token'));
+    }
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    next(createError(500, 'Server error'));
+  }
+});
+
+import auth from '../middleware/auth.js';
+
+// Get current user
+router.get('/me', auth, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Get user error:', error);
+    next(createError(500, 'Server error'));
+  }
+});
+
+// Logout
+router.post('/logout', async (req, res, next) => {
+  try {
+    // Clear any session data if needed
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    next(createError(500, 'Server error'));
   }
 });
 

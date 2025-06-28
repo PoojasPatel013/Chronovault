@@ -1,4 +1,3 @@
-// backend/server.js
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -10,12 +9,12 @@ import { dirname } from 'path';
 import auth from './middleware/auth.js';
 import authenticate from './routes/authenticate.js';
 import timeCapsuleRoutes from './routes/timecapsules.js';
-import personalityRoutes from './routes/personality.js';
 import therapyRoutes from './routes/therapy.js';
 import therapistsRoutes from './routes/therapists.js';
 import usersRoutes from './routes/users.js';
 import communityRoutes from './routes/community.js';
 import settingsRoutes from './routes/settings.js';
+import personalityRouter from './routes/personality.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,14 +56,14 @@ mongoose.connect(`mongodb://127.0.0.1:27017/timecapsule`, {
 });
 
 // Routes
+app.use('/api/auth', authenticate);
 app.use('/api/timecapsules', auth, timeCapsuleRoutes);
-app.use('/api/personality', auth, personalityRoutes);
 app.use('/api/therapy', auth, therapyRoutes);
 app.use('/api/therapists', auth, therapistsRoutes);
-app.use('/api/auth', authenticate);
 app.use('/api/users', auth, usersRoutes);
 app.use('/api/community', auth, communityRoutes);
 app.use('/api/settings', auth, settingsRoutes);
+app.use('/api/personality', personalityRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

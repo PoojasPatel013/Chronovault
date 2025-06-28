@@ -19,10 +19,18 @@ export default async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    req.user = user;
+    // Attach user to request with proper properties
+    req.user = {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      googleId: user.googleId
+    };
+    
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    console.error('Auth error:', error);
+    res.status(401).json({ message: 'Authentication failed' });
   }
 };
