@@ -21,9 +21,9 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background dark:bg-black">
           <Header />
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto px-4 py-8 text-text-light-primary dark:text-text-dark-primary">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
