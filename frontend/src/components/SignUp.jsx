@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -59,19 +59,19 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-300">
-              Username
+            <label htmlFor="name" className="block text-sm font-medium text-gray-300">
+              Name
             </label>
             <div className="mt-1">
               <input
-                id="username"
-                name="username"
+                id="name"
+                name="name"
                 type="text"
                 required
-                value={formData.username}
+                value={formData.name}
                 onChange={handleChange}
                 className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Choose a username"
+                placeholder="Enter your name"
               />
             </div>
           </div>

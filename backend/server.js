@@ -28,10 +28,19 @@ const PORT = process.env.PORT || 8000;
 // CORS configuration
 // Update CORS configuration in server.js
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests from frontend and backend
+    if (!origin || origin.startsWith('http://localhost:5173') || origin.startsWith('http://localhost:8000')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Authorization'],
+  maxAge: 86400
 };
 
 // Middleware

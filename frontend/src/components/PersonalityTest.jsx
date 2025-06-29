@@ -93,7 +93,7 @@ export default function PersonalityTest() {
   };
 
   return (
-    <div className={`max-w-4xl mx-auto p-8 bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-2xl shadow-lg ${theme === 'dark' ? 'dark:shadow-gray-800/50' : ''}`}>
+    <div className="max-w-4xl mx-auto p-8 bg-background dark:bg-background-dark rounded-2xl shadow-lg dark:shadow-gray-800/50">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -102,18 +102,15 @@ export default function PersonalityTest() {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
-          <h1 className={`text-4xl font-serif font-bold text-${theme === 'dark' ? 'white' : 'black'} mb-4`}>
+          <h1 className="text-4xl font-serif font-bold text-foreground mb-4">
             Personality Assessment
           </h1>
-          <p className={`text-lg text-${theme === 'dark' ? 'gray-400' : 'black'}/70`}>
+          <p className="text-lg text-text-light-secondary dark:text-text-dark-secondary">
             Discover your unique personality traits and strengths
           </p>
         </motion.div>
-        <h1 className={`text-4xl font-serif font-bold text-center text-${theme === 'dark' ? 'white' : 'black'} mb-8`}>
-          Personality Assessment
-        </h1>
         
         {!questions.length && (
           <div className="text-center">
@@ -133,10 +130,10 @@ export default function PersonalityTest() {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`bg-${theme === 'dark' ? 'gray-700' : 'white'} rounded-lg shadow-sm mb-6`}
+            className="bg-background dark:bg-background-dark rounded-lg shadow-sm mb-6"
           >
             <div className="space-y-4">
-              <h3 className={`text-xl font-semibold text-${theme === 'dark' ? 'white' : 'black'}`}>{question.text}</h3>
+              <h3 className="text-xl font-semibold text-foreground">{question.text}</h3>
               <div className="space-y-3">
                 {question.options.map((option, optionIndex) => (
                   <motion.label
@@ -144,7 +141,7 @@ export default function PersonalityTest() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: optionIndex * 0.1 }}
-                    className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-${theme === 'dark' ? 'gray-800' : 'white'}/10 dark:hover:bg-gray-800/30 transition-colors duration-300`}
+                    className="flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-background/10 dark:hover:bg-background-dark/30 transition-colors duration-300"
                   >
                     <input
                       type="radio"
@@ -155,7 +152,7 @@ export default function PersonalityTest() {
                       className="accent-primary scale-125"
                     />
                     <div className="flex-1">
-                      <span className="text-white/90 group-hover:text-white font-medium">{option.text}</span>
+                      <span className="text-foreground group-hover:text-foreground-dark font-medium">{option.text}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -163,7 +160,7 @@ export default function PersonalityTest() {
                       }`}>
                         {option.dimension}
                       </span>
-                      <span className="text-white/60">{option.weight} pts</span>
+                      <span className="text-text-light-secondary dark:text-text-dark-secondary">{option.weight} pts</span>
                     </div>
                   </motion.label>
                 ))}
@@ -184,7 +181,7 @@ export default function PersonalityTest() {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="flex-1 py-4 bg-background/20 text-white/70 dark:bg-gray-800/30 dark:text-gray-400 rounded-xl font-serif text-lg tracking-wide transition-all hover:bg-background/30 dark:hover:bg-gray-800/40 hover:text-white"
+                className="flex-1 py-4 bg-background/20 text-text-light-primary dark:text-text-dark-primary dark:bg-background-dark/30 rounded-xl font-serif text-lg tracking-wide transition-all hover:bg-background/30 dark:hover:bg-background-dark/40 hover:text-foreground"
               >
                 <FaChevronLeft className="mr-2" />
                 Back
@@ -192,7 +189,7 @@ export default function PersonalityTest() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-4 bg-gradient-to-r from-primary to-secondary rounded-xl font-serif text-lg tracking-wide transition-all shadow-lg dark:shadow-gray-800/50 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-4 bg-gradient-to-r from-primary to-secondary rounded-xl font-serif text-lg tracking-wide text-text-light-primary dark:text-text-dark-primary transition-all shadow-lg dark:shadow-gray-800/50 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

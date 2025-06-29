@@ -125,6 +125,118 @@ router.post('/refresh', async (req, res, next) => {
   }
 });
 
+// Signup route
+router.post('/signup', async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return next(createError(400, 'Name, email, and password are required'));
+    }
+
+    // Validate email format
+    const emailRegex = /^[\S]+@[\S]+\.[\S]+$/;
+    if (!emailRegex.test(email)) {
+      return next(createError(400, 'Please use a valid email address'));
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(createError(400, 'Email already registered'));
+    }
+
+    // Create new user with explicit fields
+    const user = new User({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password
+    });
+
+    // Save user with error handling
+    await user.save().catch(error => {
+      console.error('User save error:', error);
+      if (error.code === 11000) {
+        return next(createError(400, 'Email already registered'));
+      }
+      throw error;
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user._id,
+        email: user.email,
+        name: user.name
+      },
+      process.env.JWT_SECRET,
+      { 
+        expiresIn: '7d',
+        algorithm: 'HS256'
+      }
+    );
+
+    res.status(201).json({ 
+      token, 
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Signup error:', error);
+    if (error.code === 11000) {
+      return next(createError(400, 'Email already registered'));
+    }
+    next(createError(500, 'Failed to create account'));
+  }
+});
+
+// Login route
+router.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return next(createError(400, 'Email and password are required'));
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(createError(401, 'Invalid email or password'));
+    }
+
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return next(createError(401, 'Invalid email or password'));
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ 
+      token, 
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    next(createError(500, 'Failed to login'));
+  }
+});
+
 import auth from '../middleware/auth.js';
 
 // Get current user

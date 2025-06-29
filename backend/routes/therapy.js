@@ -6,11 +6,25 @@ import User from '../models/User.js';
 import cors from 'cors';
 
 // Enable CORS for frontend port (5173)
+<<<<<<< HEAD
 const frontendPort = 5173;
 const corsOptions = {
   origin: `http://localhost:${frontendPort}`,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+=======
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests from any origin that matches our frontend or proxy
+    if (!origin || origin === 'http://localhost:5173' || origin === 'http://localhost:8000') {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+>>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
   credentials: true
 };
 
@@ -20,9 +34,25 @@ router.use(cors(corsOptions));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => {
+<<<<<<< HEAD
   try {
     const { message } = req.body;
     const userId = req.user._id;
+=======
+  console.log(' RECEIVED AI SESSION REQUEST');
+  console.log('Request Headers:', req.headers);
+  console.log('Request Body:', req.body);
+  console.log('Authenticated User:', req.user);
+  try {
+    const { message } = req.body;
+    const userId = req.user._id;
+
+    console.log('Processing AI request:', {
+      messageId: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+      userId,
+      timestamp: new Date().toISOString()
+    });
+>>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
 
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
@@ -33,6 +63,7 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+<<<<<<< HEAD
 
     // 🔹 Use the correct model
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
@@ -52,6 +83,44 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     console.log("Candidates:", result?.response?.candidates?.length);
     console.log("First Candidate:", JSON.stringify(result?.response?.candidates?.[0], null, 2));
 
+=======
+
+    // 🔹 Use the correct model
+    const model = genAI.getGenerativeModel({
+      model: "gemini-pro"
+    });
+
+    console.log('Initialized Gemini Model:', {
+      model: 'gemini-pro',
+      apiKey: process.env.GEMINI_API_KEY ? 'PRESENT' : 'MISSING'
+    });
+
+    // ✅ Send request to Gemini
+    // Add user context to the prompt
+    const prompt = `You are a compassionate therapist. The user is ${user.name}. 
+    They are seeking help with their mental well-being. 
+    ${message}`;
+
+    const startTime = performance.now();
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    console.log('AI Response Details:', {
+      responseTime: duration.toFixed(2) + 'ms',
+      responseLength: result?.response?.candidates?.[0]?.content?.parts?.[0]?.text?.length,
+      timestamp: new Date().toISOString(),
+      model: 'gemini-pro'
+    });
+
+    // Log detailed AI response structure
+    console.log("AI Response Structure:");
+    console.log("Candidates:", result?.response?.candidates?.length);
+    console.log("First Candidate:", JSON.stringify(result?.response?.candidates?.[0], null, 2));
+
+>>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
     // Extract response with detailed error handling
     const response = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text;
     
@@ -86,6 +155,7 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     }
 
     // Add debug information to response
+<<<<<<< HEAD
     res.json({ 
       message: response,
       debug: {
@@ -93,6 +163,18 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
         model: "gemini-1.5-pro",
         responseLength: response.length,
         responsePreview: response.substring(0, 100) + (response.length > 100 ? '...' : '')
+=======
+    res.json({
+      message: response,
+      debug: {
+        timestamp: new Date().toISOString(),
+        model: 'gemini-pro',
+        responseLength: response.length,
+        responsePreview: response.substring(0, 50) + '...',
+        requestMessage: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+        userId,
+        responseTime: duration.toFixed(2) + 'ms'
+>>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
       }
     });
   } catch (err) {
