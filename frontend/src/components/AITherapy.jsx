@@ -29,7 +29,6 @@ const AITherapy = () => {
     setLoading(true)
     setError("")
 
-<<<<<<< HEAD
     try {
       // Check authentication
       if (!isAuthenticated) {
@@ -118,7 +117,7 @@ const AITherapy = () => {
         requestTime: performance.now() - startTime,
         stack: err?.stack
       });
-=======
+    }
     // API Configuration
     const API_PATH = '/api/therapy/ai-session';
     const FULL_URL = API_PATH;  // Vite proxy will handle this path
@@ -313,7 +312,6 @@ const AITherapy = () => {
       console.error('Error fetching AI response:', err);
       setError('Failed to get AI response');
       setLoading(false);
->>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
     } finally {
       setLoading(false);
     }

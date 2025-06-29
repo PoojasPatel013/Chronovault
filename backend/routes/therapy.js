@@ -6,25 +6,11 @@ import User from '../models/User.js';
 import cors from 'cors';
 
 // Enable CORS for frontend port (5173)
-<<<<<<< HEAD
 const frontendPort = 5173;
 const corsOptions = {
   origin: `http://localhost:${frontendPort}`,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-=======
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests from any origin that matches our frontend or proxy
-    if (!origin || origin === 'http://localhost:5173' || origin === 'http://localhost:8000') {
-      callback(null, true);
-    } else {
-      callback(null, false);
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
->>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
   credentials: true
 };
 
@@ -34,15 +20,6 @@ router.use(cors(corsOptions));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => {
-<<<<<<< HEAD
-  try {
-    const { message } = req.body;
-    const userId = req.user._id;
-=======
-  console.log(' RECEIVED AI SESSION REQUEST');
-  console.log('Request Headers:', req.headers);
-  console.log('Request Body:', req.body);
-  console.log('Authenticated User:', req.user);
   try {
     const { message } = req.body;
     const userId = req.user._id;
@@ -52,7 +29,6 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
       userId,
       timestamp: new Date().toISOString()
     });
->>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
 
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
@@ -63,40 +39,16 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-<<<<<<< HEAD
 
-    // 🔹 Use the correct model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-
-    // ✅ Send request to Gemini
-    // Add user context to the prompt
-    const prompt = `You are a compassionate therapist. The user is ${user.name}. 
-    They are seeking help with their mental well-being. 
-    ${message}`;
-
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
-
-    // Log detailed AI response structure
-    console.log("AI Response Structure:");
-    console.log("Candidates:", result?.response?.candidates?.length);
-    console.log("First Candidate:", JSON.stringify(result?.response?.candidates?.[0], null, 2));
-
-=======
-
-    // 🔹 Use the correct model
-    const model = genAI.getGenerativeModel({
-      model: "gemini-pro"
-    });
+    // Use Gemini Pro model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     console.log('Initialized Gemini Model:', {
       model: 'gemini-pro',
       apiKey: process.env.GEMINI_API_KEY ? 'PRESENT' : 'MISSING'
     });
 
-    // ✅ Send request to Gemini
-    // Add user context to the prompt
+    // Send request to Gemini
     const prompt = `You are a compassionate therapist. The user is ${user.name}. 
     They are seeking help with their mental well-being. 
     ${message}`;
@@ -108,6 +60,7 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     const endTime = performance.now();
     const duration = endTime - startTime;
 
+    // Log response details
     console.log('AI Response Details:', {
       responseTime: duration.toFixed(2) + 'ms',
       responseLength: result?.response?.candidates?.[0]?.content?.parts?.[0]?.text?.length,
@@ -120,24 +73,8 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     console.log("Candidates:", result?.response?.candidates?.length);
     console.log("First Candidate:", JSON.stringify(result?.response?.candidates?.[0], null, 2));
 
->>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
-    // Extract response with detailed error handling
-    const response = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!response) {
-      console.error("AI Response Analysis:");
-      console.error("Raw Response:", JSON.stringify(result, null, 2));
-      console.error("Candidates:", result?.response?.candidates);
-      console.error("First Content:", result?.response?.candidates?.[0]?.content);
-      console.error("First Part:", result?.response?.candidates?.[0]?.content?.parts?.[0]);
-      
-      throw new Error("Failed to extract AI response. Response structure may have changed.");
-    }
-
-    if (!response) {
-      console.error("❌ AI Response Missing or Undefined");
-      return res.status(500).json({ error: "Failed to generate AI response", details: "No response from AI" });
-    }
+    // Extract response text
+    const responseText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
 
     // Save conversation history
     try {
@@ -145,7 +82,7 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
         $push: {
           therapyHistory: {
             message: message,
-            response: response,
+            response: responseText,
             timestamp: new Date()
           }
         }
@@ -155,49 +92,34 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     }
 
     // Add debug information to response
-<<<<<<< HEAD
     res.json({ 
-      message: response,
-      debug: {
-        timestamp: new Date().toISOString(),
-        model: "gemini-1.5-pro",
-        responseLength: response.length,
-        responsePreview: response.substring(0, 100) + (response.length > 100 ? '...' : '')
-=======
-    res.json({
-      message: response,
+      message: responseText,
       debug: {
         timestamp: new Date().toISOString(),
         model: 'gemini-pro',
-        responseLength: response.length,
-        responsePreview: response.substring(0, 50) + '...',
+        responseLength: responseText.length,
+        responsePreview: responseText.substring(0, 50) + '...',
         requestMessage: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
         userId,
         responseTime: duration.toFixed(2) + 'ms'
->>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
       }
     });
-  } catch (err) {
-    console.error("❌ AI Session Error:", {
-      message: err.message,
-      stack: err.stack,
-      name: err.name
+  } catch (error) {
+    console.error('Error in AI session:', {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
     });
-
-    const statusCode = err.status || 500;
-    const response = {
-      error: "Server error",
-      details: err.message,
-      timestamp: new Date().toISOString(),
-      request: {
-        method: req.method,
-        path: req.path,
-        headers: Object.fromEntries(Object.entries(req.headers).filter(([k]) => !k.startsWith('cookie')))
+    res.status(500).json({ 
+      error: 'Internal server error',
+      debug: {
+        timestamp: new Date().toISOString(),
+        errorType: error.name,
+        errorMessage: error.message
       }
-    };
+    });
+  } 
 
-    res.status(statusCode).json(response);
-  }
 });
 
 export default router;

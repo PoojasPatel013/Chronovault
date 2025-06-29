@@ -84,11 +84,7 @@ const Home = () => {
           > Here to keep you sane </motion.div> */}
           <motion.h1
             variants={itemVariants}
-<<<<<<< HEAD
-            className="text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-text-light-primary to-text-light-secondary dark:from-text-dark-primary dark:to-text-dark-secondary"
-=======
             className="text-7xl font-bold mb-6 bg-clip-text "
->>>>>>> 4c59dec876db9c1802c262d1b7cf901085a5c4e4
           >
             {isAuthenticated ? `Welcome back, ${user?.username}` : "Preserve Your Journey"}
           </motion.h1>
