@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from "framer-motion"
-
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from '../contexts/AuthContext';
+import Cookies from 'js-cookie';
 
 const AITherapy = () => {
-  const [message, setMessage] = useState("")
-  const [conversation, setConversation] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [message, setMessage] = useState("");
+  const [conversation, setConversation] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { user, isAuthenticated } = useAuth();
 
+  // Check if user is authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background dark:bg-black flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-4">Please Log In</h2>
+          <p className="text-gray-400">You need to be logged in to use AI therapy</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,24 +30,93 @@ const AITherapy = () => {
     setError("")
 
     try {
-      const res = await fetch("http://localhost:5000/api/therapy/ai-session", {
+      // Check authentication
+      if (!isAuthenticated) {
+        setError("Please log in to use AI therapy");
+        return;
+      }
+
+      console.log('Sending message to AI:', message);
+      
+      // Set up API configuration with correct ports
+      const FRONTEND_PORT = 5173;
+      const BACKEND_PORT = 8000;
+      const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:${BACKEND_PORT}`;
+      const API_PATH = '/therapy/ai-session';
+      
+      console.log('API Configuration:', {
+        baseUrl: API_BASE_URL,
+        path: API_PATH,
+        frontendPort: FRONTEND_PORT,
+        backendPort: BACKEND_PORT
+      });
+      
+      const startTime = performance.now();
+      
+      const res = await fetch(`${API_BASE_URL}${API_PATH}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`
         },
-        body: JSON.stringify({ message }),
-      })
+        body: JSON.stringify({ 
+          message,
+          userId: user._id
+        }),
+      });
 
+      const endTime = performance.now();
+      const responseTime = endTime - startTime;
+      
+      console.log('API Response Time:', responseTime.toFixed(2), 'ms');
+      
       if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`)
+        const errorData = await res.json().catch(() => ({}));
+        console.error('API Error:', {
+          status: res.status,
+          headers: Object.fromEntries(res.headers.entries()),
+          data: errorData
+        });
+        throw new Error(errorData.error || `HTTP error! Status: ${res.status}`);
       }
 
-      const data = await res.json()
-      setConversation([...conversation, { role: "user", content: message }, { role: "ai", content: data.message }])
-      setMessage("")
+      const data = await res.json();
+      
+      console.log('AI Response Details:', {
+        timestamp: new Date().toISOString(),
+        responseLength: data.message?.length,
+        debugInfo: data.debug,
+        conversationLength: conversation.length + 2
+      });
+
+      if (data.error) {
+        throw new Error(data.error || 'Failed to get AI response');
+      }
+
+      // Add debug information to conversation for development
+      const newMessages = [
+        { role: "user", content: message },
+        { 
+          role: "ai", 
+          content: data.message,
+          debug: data.debug,
+          timestamp: new Date().toISOString()
+        }
+      ];
+
+      setConversation(prev => [...prev, ...newMessages]);
+      setMessage("");
     } catch (err) {
-      setError("Failed to get AI response. Please try again.")
-      console.error("Error fetching AI response:", err)
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Error: ${errorMessage}`);
+      console.error("Error fetching AI response:", {
+        error: err,
+        message: errorMessage,
+        status: err?.status,
+        url: `${API_BASE_URL}${API_PATH}`,
+        requestTime: performance.now() - startTime,
+        stack: err?.stack
+      });
     } finally {
       setLoading(false)
     }
@@ -56,10 +138,20 @@ const AITherapy = () => {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
                     className={`p-3 rounded-lg ${
-                      msg.role === "user" ? "bg-blue-600 ml-auto" : "bg-gray-700"
-                    } max-w-[80%] ${msg.role === "user" ? "text-right" : "text-left"}`}
+                      msg.role === "user" ? "bg-primary/90 dark:bg-primary/90 ml-auto" : "bg-background/80 dark:bg-background-dark/80"
+                    } max-w-[80%] ${msg.role === "user" ? "text-right" : "text-left"} text-text-light-primary dark:text-text-dark-primary relative`}
                   >
-                    <p className="text-white">{msg.content}</p>
+                    <div>
+                    <p className="text-text-light-primary dark:text-text-dark-primary mb-1">{msg.content}</p>
+                    {msg.debug && (
+                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        <div>Response Time: {msg.debug.timestamp}</div>
+                        <div>Model: {msg.debug.model}</div>
+                        <div>Length: {msg.debug.responseLength}</div>
+                        <div>Preview: {msg.debug.responsePreview}</div>
+                      </div>
+                    )}
+                  </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -76,7 +168,7 @@ const AITherapy = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-blue-600 text-white p-3 rounded-r-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="bg-blue-600 text-white p-3 rounded-r-lg hover:bg-black transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {loading ? (
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">

@@ -47,7 +47,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background dark:bg-black text-text-light-primary dark:text-text-dark-primary">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <motion.div
@@ -57,7 +57,7 @@ const Home = () => {
           transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, repeatType: "reverse" }}
         >
           <div className="relative h-full w-full">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
             <motion.div
               className="absolute inset-0 flex"
               animate={{ x: [0, -1000] }}
@@ -80,11 +80,11 @@ const Home = () => {
         >
           <motion.h1
             variants={itemVariants}
-            className="text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400"
+            className="text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-text-light-primary to-text-light-secondary dark:from-text-dark-primary dark:to-text-dark-secondary"
           >
             {isAuthenticated ? `Welcome back, ${user?.username}` : "Preserve Your Journey"}
           </motion.h1>
-          <motion.p variants={itemVariants} className="text-xl mb-12 text-gray-300">
+          <motion.p variants={itemVariants} className="text-xl mb-12 text-text-light-secondary dark:text-text-dark-secondary">
             {isAuthenticated
               ? "Continue your journey of memories and mental well-being"
               : "A digital sanctuary for your memories and mental well-being"}
