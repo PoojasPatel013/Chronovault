@@ -82,4 +82,4 @@ router.put('/time-capsules/:id/public', auth, async (req, res) => {
   }
 });
 
-export default router;
+export const communityRouter = router;

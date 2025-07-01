@@ -1,9 +1,11 @@
 import { Router } from 'express';
-const router = Router();
-import TimeCapsule from '../models/TimeCapsule.js'; // ✅ Corrected import
-import auth from '../middleware/auth.js';
+import TimeCapsule from '../models/TimeCapsule.js';
+import { verifyToken } from '../middleware/auth.js';
+import express from 'express';
 
-router.post('/', auth, async (req, res) => {
+const router = express.Router();
+
+router.post('/', verifyToken, async (req, res) => {
   try {
     const { content, file, unlockDate, isPublic } = req.body;
     const newTimeCapsule = new TimeCapsule({
@@ -24,7 +26,7 @@ router.post('/', auth, async (req, res) => {
 
 router.get('/public', async (req, res) => {
   try {
-    const publicCapsules = await TimeCapsule.find({ isPublic: true, unlockDate: { $lte: new Date() } }) // ✅ Corrected
+    const publicCapsules = await TimeCapsule.find({ isPublic: true, unlockDate: { $lte: new Date() } }) 
       .populate('createdBy', 'username')
       .sort({ createdAt: -1 })
       .limit(20);
@@ -35,9 +37,9 @@ router.get('/public', async (req, res) => {
   }
 });
 
-router.get('/user', auth, async (req, res) => {
+router.get('/user', verifyToken, async (req, res) => {
   try {
-    const userCapsules = await TimeCapsule.find({ createdBy: req.user.id }) // ✅ Corrected
+    const userCapsules = await TimeCapsule.find({ createdBy: req.user.id }) 
       .sort({ createdAt: -1 });
     res.json(userCapsules);
   } catch (err) {
@@ -46,4 +48,4 @@ router.get('/user', auth, async (req, res) => {
   }
 });
 
-export default router;
+export const timeCapsuleRouter = router;

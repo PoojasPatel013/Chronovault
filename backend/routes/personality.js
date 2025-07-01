@@ -171,4 +171,4 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-export default router;
+export const personalityRouter = router;

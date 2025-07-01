@@ -42,4 +42,4 @@ router.post('/book', auth, async (req, res) => {
   }
 });
 
-export default router;
+export const therapistsRouter = router;

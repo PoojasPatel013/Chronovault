@@ -1,9 +1,10 @@
-import { Router } from "express";
-const router = Router();
+import express from 'express';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import auth from '../middleware/auth.js';
+import { verifyToken } from '../middleware/auth.js';
 import User from '../models/User.js';
 import cors from 'cors';
+
+const router = express.Router();
 
 // Enable CORS for frontend port (5173)
 const frontendPort = 5173;
@@ -19,7 +20,7 @@ router.use(cors(corsOptions));
 // ✅ Initialize Google Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => {
+router.post("/therapy/ai-session", cors(corsOptions), verifyToken, async (req, res) => {
   try {
     const { message } = req.body;
     const userId = req.user._id;
@@ -44,7 +45,7 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     console.log('Initialized Gemini Model:', {
-      model: 'gemini-pro',
+      model: 'gemini-1.5-flash',
       apiKey: process.env.GEMINI_API_KEY ? 'PRESENT' : 'MISSING'
     });
 
@@ -65,7 +66,7 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
       responseTime: duration.toFixed(2) + 'ms',
       responseLength: result?.response?.candidates?.[0]?.content?.parts?.[0]?.text?.length,
       timestamp: new Date().toISOString(),
-      model: 'gemini-pro'
+      model: 'gemini-1.5-flash'
     });
 
     // Log detailed AI response structure
@@ -122,4 +123,4 @@ router.post("/therapy/ai-session", cors(corsOptions), auth, async (req, res) => 
 
 });
 
-export default router;
+export const therapyRouter = router;

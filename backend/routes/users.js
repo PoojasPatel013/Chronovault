@@ -38,4 +38,4 @@ router.get('/time-capsules', auth, async (req, res) => {
   }
 });
 
-export default router;
+export const usersRouter = router;

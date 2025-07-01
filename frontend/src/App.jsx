@@ -1,12 +1,11 @@
 // frontend/src/App.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Header from './components/Header';
 import Home from './components/Home';
 import Login from './components/Login';
-import SignUp from './components/SignUp';
+import Register from './components/Register';
 import TimeCapsule from './components/TimeCapsule';
 import CommunityFeed from './components/CommunityFeed';
 import PersonalityTest from './components/PersonalityTest';
@@ -16,18 +15,20 @@ import BookSession from './components/BookSession';
 import UserDashboard from './components/UserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import Settings from './components/Settings';
+import { AuthProvider } from './contexts/AuthContext';
+import './index.css'
 
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <div className="min-h-screen bg-background dark:bg-black">
+        <div className="min-h-screen bg-background dark:bg-black relative">
           <Header />
           <div className="container mx-auto px-4 py-8 text-text-light-primary dark:text-text-dark-primary">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
+              <Route path="/register" element={<Register />} />
               <Route
                 path="/time-capsule"
                 element={
@@ -84,11 +85,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </div>
         </div>
@@ -96,5 +100,4 @@ function App() {
     </AuthProvider>
   );
 }
-
 export default App;

@@ -2,12 +2,16 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-export default async (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
     
     if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'No token provided',
+        error: 'Authentication required'
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -16,7 +20,11 @@ export default async (req, res, next) => {
     const user = await User.findById(decoded.userId);
     
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not found',
+        error: 'User not found'
+      });
     }
 
     // Attach user to request with proper properties
@@ -34,3 +42,6 @@ export default async (req, res, next) => {
     res.status(401).json({ message: 'Authentication failed' });
   }
 };
+
+export { verifyToken };
+export default verifyToken;

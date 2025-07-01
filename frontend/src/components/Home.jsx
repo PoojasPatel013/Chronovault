@@ -94,7 +94,7 @@ const Home = () => {
               : "A digital sanctuary for your memories and mental well-being"}
           </motion.p>
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isAuthenticated ? (
+             {isAuthenticated ? (
               <>
                 <button
                   onClick={() => navigate("/community")}
@@ -112,14 +112,8 @@ const Home = () => {
             ) : (
               <>
                 <button
-                  onClick={() => navigate("/signup")}
-                  className="px-8 py-4 bg-white text-black rounded-full text-lg font-medium hover:bg-gray-100 transition-all"
-                >
-                  Start Your Journey
-                </button>
-                <button
                   onClick={() => navigate("/login")}
-                  className="px-8 py-4 border-2 border-white text-white rounded-full text-lg font-medium hover:bg-white/10 transition-all"
+                  className="px-8 py-4 bg-white text-black rounded-full text-lg font-medium hover:bg-gray-100 transition-all"
                 >
                   Sign In
                 </button>
@@ -150,10 +144,10 @@ const Home = () => {
                 24/7, completely confidential, and tailored to your needs.
               </p>
               <button
-                onClick={() => navigate(isAuthenticated ? "/ai-therapy" : "/signup")}
+                onClick={() => navigate(isAuthenticated ? "/ai-therapy" : "/login")}
                 className="px-8 py-4 bg-white text-black rounded-full text-lg font-medium hover:bg-gray-100 transition-all w-full"
               >
-                {isAuthenticated ? "Start AI Therapy" : "Sign Up to Access"}
+                {isAuthenticated ? "Start AI Therapy" : "Sign In to Access"}
               </button>
             </div>
             <div className="space-y-8">
@@ -163,10 +157,10 @@ const Home = () => {
                 future you or connect with others on similar paths.
               </p>
               <button
-                onClick={() => navigate(isAuthenticated ? "/time-capsule" : "/signup")}
+                onClick={() => navigate(isAuthenticated ? "/time-capsule" : "/login")}
                 className="px-8 py-4 border-2 border-white text-white rounded-full text-lg font-medium hover:bg-white/10 transition-all w-full"
               >
-                {isAuthenticated ? "Create Time Capsule" : "Sign Up to Access"}
+                {isAuthenticated ? "Create Time Capsule" : "Sign In to Access"}
               </button>
             </div>
           </motion.div>

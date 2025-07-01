@@ -60,4 +60,4 @@ router.post('/change-password', auth, async (req, res) => {
   }
 });
 
-export default router;
+export const settingsRouter = router;

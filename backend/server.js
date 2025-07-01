@@ -1,92 +1,84 @@
 import express from 'express';
 import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import cookieParser from 'cookie-parser';
+import authRouter from './routes/auth.js';
+import errorHandler from './middleware/errorHandler.js';
 import auth from './middleware/auth.js';
-import authenticate from './routes/authenticate.js';
-import timeCapsuleRoutes from './routes/timecapsules.js';
-import therapyRoutes from './routes/therapy.js';
-import therapistsRoutes from './routes/therapists.js';
-import usersRoutes from './routes/users.js';
-import communityRoutes from './routes/community.js';
-import settingsRoutes from './routes/settings.js';
-import personalityRouter from './routes/personality.js';
+import { timeCapsuleRouter } from './routes/timecapsules.js';
+import { therapyRouter } from './routes/therapy.js';
+import { therapistsRouter } from './routes/therapists.js';
+import { usersRouter } from './routes/users.js';
+import { communityRouter } from './routes/community.js';
+import { settingsRouter } from './routes/settings.js';
+import { personalityRouter } from './routes/personality.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename = import.meta.url;
+const __dirname = new URL(__filename).pathname;
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+// Get environment variables
 const PORT = process.env.PORT || 8000;
-
-// CORS configuration
-// Update CORS configuration in server.js
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests from frontend and backend
-    if (!origin || origin.startsWith('http://localhost:5173') || origin.startsWith('http://localhost:8000')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Authorization'],
-  maxAge: 86400
-};
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/timecapsule';
 
 // Middleware
-app.use(cors(corsOptions));
+app.use(express.json());
 app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+
+// CORS configuration
+app.use(cors({
+  origin: FRONTEND_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 200
+}));
+
+
 
 // Connect to MongoDB
-mongoose.connect(`mongodb://127.0.0.1:27017/timecapsule`, {
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  family: 4, // Force IPv4
-}).then(() => {
-  console.log('✅ Connected to MongoDB');
-  console.log('✅ MongoDB connection details:', {
-    host: '127.0.0.1',
-    port: '27017',
-    db: 'timecapsule'
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/timecapsule')
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    const connectionDetails = {
+      host: mongoose.connection.host,
+      port: mongoose.connection.port,
+      db: mongoose.connection.name
+    };
+    console.log('✅ MongoDB connection details:', connectionDetails);
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
   });
-}).catch((err) => {
-  console.error('❌ MongoDB connection error:', err);
-});
 
 // Routes
-app.use('/api/auth', authenticate);
-app.use('/api/timecapsules', auth, timeCapsuleRoutes);
-app.use('/api/therapy', auth, therapyRoutes);
-app.use('/api/therapists', auth, therapistsRoutes);
-app.use('/api/users', auth, usersRoutes);
-app.use('/api/community', auth, communityRoutes);
-app.use('/api/settings', auth, settingsRoutes);
-app.use('/api/personality', personalityRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/timecapsules', auth, timeCapsuleRouter);
+app.use('/api/therapy', auth, therapyRouter);
+app.use('/api/therapists', auth, therapistsRouter);
+app.use('/api/users', auth, usersRouter);
+app.use('/api/community', auth, communityRouter);
+app.use('/api/settings', auth, settingsRouter);
+app.use('/api/personality', auth, personalityRouter);
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
-});
+app.use(errorHandler);
 
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ JWT Secret: ${JWT_SECRET}`);
+  console.log(`✅ MongoDB URI: ${MONGODB_URI}`);
+  console.log(`✅ Frontend URL: ${FRONTEND_URL}`);
 });
 
 export default app;

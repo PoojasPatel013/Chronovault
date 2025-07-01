@@ -1,5 +1,6 @@
 "use client"
 
+import React from 'react';
 import { useState, useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
@@ -49,7 +50,7 @@ const Header = () => {
       initial="hidden"
       animate="visible"
       variants={headerVariants}
-      className={`fixed w-full z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
         isScrolled ? "py-2 bg-black/90 backdrop-blur-sm" : "py-4 bg-transparent"
       }`}
     >
@@ -62,11 +63,12 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-8">
             {isAuthenticated ? (
               <>
+                <NavLink to="/dashboard">Dashboard</NavLink>
+                <NavLink to="/time-capsule">Time Capsule</NavLink>
                 <NavLink to="/community">Community</NavLink>
                 <NavLink to="/personality-test">Personality Test</NavLink>
                 <NavLink to="/ai-therapy">AI Therapy</NavLink>
                 <NavLink to="/book-session">Book Session</NavLink>
-                <NavLink to="/time-capsule">Time Capsule</NavLink>
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
@@ -81,15 +83,9 @@ const Header = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="px-6 py-2 text-sm font-medium text-white hover:text-gray-200 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
                   className="px-6 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
                 >
-                  Sign Up
+                  Sign In
                 </Link>
               </div>
             )}
@@ -124,6 +120,12 @@ const Header = () => {
             <div className="container mx-auto px-4 py-6 space-y-4">
               {isAuthenticated ? (
                 <>
+                  <NavLink to="/dashboard" onClick={() => setIsOpen(false)}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/time-capsule" onClick={() => setIsOpen(false)}>
+                    Time Capsule
+                  </NavLink>
                   <NavLink to="/community" onClick={() => setIsOpen(false)}>
                     Community
                   </NavLink>
@@ -135,9 +137,6 @@ const Header = () => {
                   </NavLink>
                   <NavLink to="/book-session" onClick={() => setIsOpen(false)}>
                     Book Session
-                  </NavLink>
-                  <NavLink to="/time-capsule" onClick={() => setIsOpen(false)}>
-                    Time Capsule
                   </NavLink>
                   <div className="pt-4 space-y-4">
                     <button
@@ -159,13 +158,6 @@ const Header = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     Sign In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="block w-full px-6 py-3 text-center bg-white text-black rounded-full hover:bg-gray-100 transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Sign Up
                   </Link>
                 </div>
               )}
@@ -202,6 +194,14 @@ const Header = () => {
               >
                 <User size={20} />
                 <span>Dashboard</span>
+              </Link>
+              <Link
+                to="/profile"
+                className="flex items-center space-x-2 text-gray-300 hover:text-white"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <User size={20} />
+                <span>Profile</span>
               </Link>
               <Link
                 to="/settings"
