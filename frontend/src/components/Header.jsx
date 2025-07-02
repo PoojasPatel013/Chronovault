@@ -1,11 +1,31 @@
-"use client"
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { User, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 
-import React from 'react';
-import { useState, useEffect } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { motion, AnimatePresence } from "framer-motion"
-import { User, Settings, LogOut } from "lucide-react"
-import { useAuth } from "../contexts/AuthContext"
+const NavLink = ({ to, children, onClick }) => {
+  const location = useLocation()
+  const isActive = location.pathname === to
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 100 }}
+    >
+      <Link
+        to={to}
+        onClick={onClick}
+        className={`block text-lg md:text-sm font-medium transition-colors ${
+          isActive ? "text-white" : "text-gray-400 hover:text-white"
+        }`}
+      >
+        {children}
+      </Link>
+    </motion.div>
+  )
+}
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -69,12 +89,13 @@ const Header = () => {
                 <NavLink to="/personality-test">Personality Test</NavLink>
                 <NavLink to="/ai-therapy">AI Therapy</NavLink>
                 <NavLink to="/book-session">Book Session</NavLink>
+
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
                     className="text-white hover:text-gray-200 transition-colors flex items-center space-x-2"
                   >
-                    <User size={24} />
+                    <User className="w-6 h-6" />
                     <span className="text-sm">{user?.username}</span>
                   </button>
                 </div>
@@ -84,13 +105,18 @@ const Header = () => {
                 <Link
                   to="/login"
                   className="px-6 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                  to="/register"
+                  className="px-6 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
                 >
-                  Sign In
+                  Sign Up
                 </Link>
               </div>
             )}
           </div>
-
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-white focus:outline-none"
@@ -120,12 +146,6 @@ const Header = () => {
             <div className="container mx-auto px-4 py-6 space-y-4">
               {isAuthenticated ? (
                 <>
-                  <NavLink to="/dashboard" onClick={() => setIsOpen(false)}>
-                    Dashboard
-                  </NavLink>
-                  <NavLink to="/time-capsule" onClick={() => setIsOpen(false)}>
-                    Time Capsule
-                  </NavLink>
                   <NavLink to="/community" onClick={() => setIsOpen(false)}>
                     Community
                   </NavLink>
@@ -138,6 +158,9 @@ const Header = () => {
                   <NavLink to="/book-session" onClick={() => setIsOpen(false)}>
                     Book Session
                   </NavLink>
+                  <NavLink to="/time-capsule" onClick={() => setIsOpen(false)}>
+                    Time Capsule
+                  </NavLink>
                   <div className="pt-4 space-y-4">
                     <button
                       onClick={() => {
@@ -146,7 +169,7 @@ const Header = () => {
                       }}
                       className="block w-full px-6 py-3 text-center text-white border border-white rounded-full hover:bg-white/10 transition-colors"
                     >
-                      Account ({user?.username})
+                      Account ({user?.name})
                     </button>
                   </div>
                 </>
@@ -158,6 +181,13 @@ const Header = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     Sign In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="block w-full px-6 py-3 text-center bg-white text-black rounded-full hover:bg-gray-100 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign Up
                   </Link>
                 </div>
               )}
@@ -184,7 +214,7 @@ const Header = () => {
             <div className="space-y-4">
               <div className="pb-4 border-b border-gray-700">
                 <p className="text-sm text-gray-400">Welcome back,</p>
-                <p className="text-lg font-semibold">{user?.username}</p>
+                <p className="text-lg font-semibold">{user?.name}</p>
                 <p className="text-sm text-gray-400">{user?.email}</p>
               </div>
               <Link
@@ -192,31 +222,55 @@ const Header = () => {
                 className="flex items-center space-x-2 text-gray-300 hover:text-white"
                 onClick={() => setIsSidebarOpen(false)}
               >
-                <User size={20} />
+                <User className="w-5 h-5" />
                 <span>Dashboard</span>
               </Link>
               <Link
-                to="/profile"
+                to="/time-capsule"
                 className="flex items-center space-x-2 text-gray-300 hover:text-white"
                 onClick={() => setIsSidebarOpen(false)}
               >
-                <User size={20} />
-                <span>Profile</span>
+                <User className="w-5 h-5" />
+                <span>Time Capsule</span>
               </Link>
               <Link
-                to="/settings"
+                to="/community"
                 className="flex items-center space-x-2 text-gray-300 hover:text-white"
                 onClick={() => setIsSidebarOpen(false)}
               >
-                <Settings size={20} />
-                <span>Settings</span>
+                <User className="w-5 h-5" />
+                <span>Community</span>
+              </Link>
+              <Link
+                to="/personality-test"
+                className="flex items-center space-x-2 text-gray-300 hover:text-white"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <User className="w-5 h-5" />
+                <span>Personality Test</span>
+              </Link>
+              <Link
+                to="/ai-therapy"
+                className="flex items-center space-x-2 text-gray-300 hover:text-white"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <User className="w-5 h-5" />
+                <span>AI Therapy</span>
+              </Link>
+              <Link
+                to="/book-session"
+                className="flex items-center space-x-2 text-gray-300 hover:text-white"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <User className="w-5 h-5" />
+                <span>Book Session</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 text-gray-300 hover:text-white w-full text-left"
+                className="flex items-center space-x-2 text-red-500 hover:text-red-400 w-full text-left"
               >
-                <LogOut size={20} />
-                <span>Log Out</span>
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
               </button>
             </div>
           </motion.div>
@@ -225,29 +279,4 @@ const Header = () => {
     </motion.header>
   )
 }
-
-const NavLink = ({ to, children, onClick }) => {
-  const location = useLocation()
-  const isActive = location.pathname === to
-
-  const menuItemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } },
-  }
-
-  return (
-    <motion.div variants={menuItemVariants}>
-      <Link
-        to={to}
-        onClick={onClick}
-        className={`block text-lg md:text-sm font-medium transition-colors ${
-          isActive ? "text-white" : "text-gray-400 hover:text-white"
-        }`}
-      >
-        {children}
-      </Link>
-    </motion.div>
-  )
-}
-
 export default Header

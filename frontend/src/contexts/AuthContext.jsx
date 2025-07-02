@@ -22,8 +22,11 @@ api.interceptors.response.use(
       try {
         const response = await api.post('/auth/refresh');
         const token = response.data.token;
-        Cookies.set('jwt', token, { expires: 7 });
-        originalRequest.headers.Authorization = `Bearer ${token}`;
+        Cookies.set('jwt', token, { 
+          expires: 7,
+          secure: false, // Allow local development
+          sameSite: 'lax'
+        });
         
         return api(originalRequest);
       } catch (refreshError) {
@@ -45,26 +48,52 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState('');
 
   // Check authentication state
-  const isAuthenticated = () => {
-    const token = Cookies.get('jwt');
-    return !!token && !!user && !!user._id;
-  };
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = Cookies.get('jwt');
+      if (!token) {
+        setIsAuthenticated(false);
+        setUser(null);
+        return;
+      }
+
+      try {
+        const response = await api.get('/auth/me');
+        if (response.status === 200 && response.data.user) {
+          setUser(response.data.user);
+          setIsAuthenticated(true);
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        Cookies.remove('jwt');
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   // Authentication functions
   const signup = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      const { token, user: userData } = response.data;
+      const { token, user } = response.data;
       
       // Store token in cookie
       Cookies.set('jwt', token, { 
         expires: 7,
-        secure: window.location.protocol === 'https:',
+        secure: false, // Allow local development
         sameSite: 'lax'
       });
       
-      // Update user state
-      setUser(userData);
+      // Update user state with verified data
+      setUser(user);
+      setIsAuthenticated(true);
       setError('');
       return true;
     } catch (error) {
@@ -77,42 +106,29 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      const { token, user: userData } = response.data;
+      const { token, user } = response.data;
       
       // Store token in cookie
       Cookies.set('jwt', token, { 
         expires: 7,
-        secure: window.location.protocol === 'https:',
+        secure: false, // Allow local development
         sameSite: 'lax'
       });
       
-      // Update user state
-      setUser(userData);
-      setError('');
-      return true;
+      // Verify token immediately
+      const verifyResponse = await api.get('/auth/me');
+      if (verifyResponse.status === 200 && verifyResponse.data.user) {
+        // Update user state with verified data
+        setUser(user);
+        setIsAuthenticated(true);
+        setError('');
+        return true;
+      } else {
+        throw new Error('Token verification failed');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.message || error.message || 'Login failed');
-      return false;
-    }
-  };
-
-  const googleLogin = async (token) => {
-    try {
-      const res = await api.post('/auth/google', { token });
-      if (res.data.token) {
-        Cookies.set('jwt', res.data.token, { 
-          expires: 7,
-          secure: window.location.protocol === 'https:',
-          sameSite: 'lax'
-        });
-        setUser(res.data.user);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Google login failed:', error);
-      setError(error.response?.data?.message || 'Google login failed');
       return false;
     }
   };
@@ -122,36 +138,41 @@ export const AuthProvider = ({ children }) => {
     Cookies.remove('jwt');
     // Clear user state
     setUser(null);
+    setIsAuthenticated(false);
     setError('');
-    // Clear axios default headers
-    delete api.defaults.headers.Authorization;
     return true;
   };
 
   // Initialize auth state
   useEffect(() => {
+    setLoading(true);
     const token = Cookies.get('jwt');
-    if (token) {
-      api.defaults.headers.Authorization = `Bearer ${token}`;
-      // Verify token and fetch user data
-      api.get('/auth/me')
-        .then((response) => {
-          setUser(response.data);
-        })
-        .catch((error) => {
-          console.error('Token verification failed:', error);
-          Cookies.remove('jwt');
-          setError('Session expired. Please login again.');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
+    
+    if (!token) {
       setLoading(false);
       setUser(null);
       setError('');
-      delete api.defaults.headers.Authorization;
+      return;
     }
+
+    api.get('/auth/me')
+      .then((response) => {
+        if (response.status === 200) {
+          setUser(response.data.user);
+          setError('');
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      })
+      .catch((error) => {
+        console.error('Token verification failed:', error);
+        Cookies.remove('jwt');
+        setError('Session expired. Please login again.');
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -161,7 +182,6 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         signup,
         login,
-        googleLogin,
         logout,
         loading,
         error,

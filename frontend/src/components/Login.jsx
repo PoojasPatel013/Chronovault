@@ -1,6 +1,6 @@
 // frontend/src/pages/Login.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from "../contexts/AuthContext";
 
 const Login = () => {
@@ -9,6 +9,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuth().login;
 
   const handleSubmit = async (e) => {
@@ -19,8 +20,9 @@ const Login = () => {
     try {
       const success = await login({ email: email.trim().toLowerCase(), password });
       if (success) {
+        // Get the location state from the ProtectedRoute
         const from = location.state?.from?.pathname || '/';
-        navigate(from);
+        navigate(from, { replace: true });
       }
     } catch (error) {
       setError(error.message || 'Login failed');

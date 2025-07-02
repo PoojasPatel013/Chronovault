@@ -13,7 +13,7 @@ const router = express.Router();
 // Helper function to handle errors
 const handleError = (res, error, message, statusCode = 500) => {
   console.error(message, error);
-  res.status(statusCode).json({
+  throw createError(statusCode, message, {
     success: false,
     message,
     error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -21,6 +21,7 @@ const handleError = (res, error, message, statusCode = 500) => {
 };
 
 // Helper function to handle authentication
+// Update auth middleware to use cookie-based authentication
 const authenticate = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
@@ -43,6 +44,7 @@ const authenticate = async (req, res, next) => {
     }
 
     req.user = user;
+    req.userId = decoded.userId; // Add userId to req object
     next();
   } catch (error) {
     handleError(res, error, 'Authentication failed', 401);
@@ -112,8 +114,8 @@ router.post('/register', async (req, res) => {
     // Set cookie
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false, // Allow local development on http
+      sameSite: 'lax', // More forgiving for local development
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -191,12 +193,12 @@ router.post('/login', async (req, res) => {
     // Set cookie
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false, // Allow local development on http
+      sameSite: 'lax', // More forgiving for local development
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    // Send response
+    // Send response with user data
     res.json({
       success: true,
       token,
@@ -217,7 +219,8 @@ router.post('/login', async (req, res) => {
 // Get user profile (protected route)
 router.get('/profile', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    // Use the user object already set in auth middleware
+    const user = req.user;
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }

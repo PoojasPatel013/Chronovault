@@ -23,7 +23,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Handle HTTP errors
-  if (err instanceof createError.HttpError) {
+  if (err instanceof Error && err.status) {
     return res.status(err.status).json({
       success: false,
       message: err.message,
