@@ -20,7 +20,6 @@ const handleError = (res, error, message, statusCode = 500) => {
   });
 };
 
-// Helper function to handle authentication
 // Update auth middleware to use cookie-based authentication
 const authenticate = async (req, res, next) => {
   try {
@@ -115,7 +114,7 @@ router.post('/register', async (req, res) => {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
     });
 
     res.status(201).json({
@@ -195,9 +194,9 @@ router.post('/login', async (req, res) => {
     res.cookie('jwt', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+      sameSite: 'Lax',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });    
 
     return res.status(200).json({
       success: true,

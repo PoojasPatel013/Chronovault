@@ -24,8 +24,8 @@ const app = express();
 // Get environment variables
 const PORT = process.env.PORT || 8000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const JWT_SECRET = process.env.JWT_SECRET || 'poohwinnie';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://poojaspatel1375:sjIzjgV7PmqRu76g@timecapsule.ukskbxc.mongodb.net/?retryWrites=true&w=majority&appName=timecapsule';
+const JWT_SECRET = process.env.JWT_SECRET;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 // Middleware
 app.use(express.json());
@@ -42,18 +42,10 @@ app.use(cors({
   maxAge: 86400 // 24 hours
 }));
 
-
-
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/timecapsule')
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    const connectionDetails = {
-      host: mongoose.connection.host,
-      port: mongoose.connection.port,
-      db: mongoose.connection.name
-    };
-    console.log('✅ MongoDB connection details:', connectionDetails);
   })
   .catch((error) => {
     console.error('❌ MongoDB connection error:', error);
@@ -77,9 +69,6 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ JWT Secret: ${JWT_SECRET}`);
-  console.log(`✅ MongoDB URI: ${MONGODB_URI}`);
-  console.log(`✅ Frontend URL: ${FRONTEND_URL}`);
 });
 
 export default app;

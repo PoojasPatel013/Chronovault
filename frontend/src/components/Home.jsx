@@ -82,7 +82,7 @@ const Home = () => {
             variants={itemVariants}
             className="text-7xl font-bold mb-6 bg-clip-text "
           >
-            {isAuthenticated ? `Welcome back, ${user?.username}` : "Preserve Your Journey"}
+            {isAuthenticated ? `Welcome back, ${user?.name}` : "Preserve Your Journey"}
           </motion.h1>
           <motion.p variants={itemVariants} className="text-xl mb-12 text-text-light-secondary dark:text-text-dark-secondary">
             {isAuthenticated

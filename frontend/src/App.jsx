@@ -17,6 +17,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Settings from './components/Settings';
 import { AuthProvider } from './contexts/AuthContext';
 import './index.css'
+import axios from 'axios';
+
+axios.defaults.withCredentials = true;
 
 function App() {
   return (

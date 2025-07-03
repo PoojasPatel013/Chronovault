@@ -12,7 +12,6 @@ export default function PersonalityTest() {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -28,7 +27,8 @@ export default function PersonalityTest() {
     }
 
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/personality/questions`, {
+      const response = await axios.get('http://localhost:8000/api/personality/questions', {
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${Cookies.get('jwt')}`
         }
