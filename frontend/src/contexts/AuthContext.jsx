@@ -8,7 +8,8 @@ const api = axios.create({
   baseURL: 'http://localhost:8000/api',
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
   }
 });
 
@@ -105,7 +106,15 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await api.post('/auth/login', credentials);
+      // Add credentials to request
+      const response = await api.post('/auth/login', credentials, {
+        withCredentials: true
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Login failed');
+      }
+
       const { token, user } = response.data;
       
       // Store token in cookie
@@ -115,21 +124,16 @@ export const AuthProvider = ({ children }) => {
         sameSite: 'lax'
       });
       
-      // Verify token immediately
-      const verifyResponse = await api.get('/auth/me');
-      if (verifyResponse.status === 200 && verifyResponse.data.user) {
-        // Update user state with verified data
-        setUser(user);
-        setIsAuthenticated(true);
-        setError('');
-        return true;
-      } else {
-        throw new Error('Token verification failed');
-      }
+      // Update user state
+      setUser(user);
+      setIsAuthenticated(true);
+      setError('');
+      return user;
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.message || error.message || 'Login failed');
-      return false;
+      Cookies.remove('jwt'); // Clean up token on failure
+      return null;
     }
   };
 

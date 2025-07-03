@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Cookies from 'js-cookie';
-import { FaChevronRight, FaChevronLeft, FaMoon, FaSun } from 'react-icons/fa';
+import { FaChevronRight, FaChevronLeft, FaMoon, FaSun, FaFire } from 'react-icons/fa';
 import { ThemeContext } from '../contexts/ThemeContext';
 
 export default function PersonalityTest() {
@@ -93,7 +93,7 @@ export default function PersonalityTest() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-background dark:bg-background-dark rounded-2xl shadow-lg dark:shadow-gray-800/50">
+    <div className="max-w-4xl mx-auto p-8 bg-background dark:bg-background-dark rounded-2xl shadow-lg dark:shadow-gray-800/50 relative">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

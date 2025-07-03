@@ -71,7 +71,6 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, gender, birthdate } = req.body;
 
-    // Validate required fields
     if (!name || !email || !password || !gender || !birthdate) {
       return res.status(400).json({
         success: false,
@@ -79,8 +78,11 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    console.log('REGISTERING USER:');
+    console.log('Email:', email);
+    console.log('👉 Raw password:', password);
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -88,7 +90,11 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Create new user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    console.log('🔐 Hashed password saved:', hashedPassword);
+
     const user = new User({
       name,
       email: email.toLowerCase().trim(),
@@ -97,29 +103,21 @@ router.post('/register', async (req, res) => {
       birthdate: new Date(birthdate)
     });
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
-    // Save user
     await user.save();
 
-    // Generate JWT
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    // Set cookie
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: false, // Allow local development on http
-      sameSite: 'lax', // More forgiving for local development
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Send response
     res.status(201).json({
       success: true,
       token,
@@ -136,6 +134,7 @@ router.post('/register', async (req, res) => {
     handleError(res, error, 'Registration failed');
   }
 });
+
 
 // Login user
 router.post('/logout', async (req, res) => {
@@ -157,7 +156,10 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
+    console.log('\n🟡 Login attempt:');
+    console.log('Email:', email);
+    console.log('Password:', password);
+
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -165,17 +167,22 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Find user
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
+
     if (!user) {
+      console.log('🔴 No user found with email:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Check password
+    console.log('🟢 User found:', user.email);
+    console.log('🔐 Stored password hash:', user.password);
+
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('✅ Password valid?', isValidPassword);
+
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
@@ -183,23 +190,16 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Generate JWT
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    // Set cookie
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: false, // Allow local development on http
-      sameSite: 'lax', // More forgiving for local development
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Send response with user data
-    res.json({
+    return res.status(200).json({
       success: true,
       token,
       user: {
@@ -212,9 +212,15 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (error) {
-    handleError(res, error, 'Login failed');
+    console.error('Login failed:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
+
 
 // Get user profile (protected route)
 router.get('/profile', auth, async (req, res) => {

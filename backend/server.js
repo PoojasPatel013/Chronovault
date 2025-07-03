@@ -24,8 +24,8 @@ const app = express();
 // Get environment variables
 const PORT = process.env.PORT || 8000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/timecapsule';
+const JWT_SECRET = process.env.JWT_SECRET || 'poohwinnie';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://poojaspatel1375:sjIzjgV7PmqRu76g@timecapsule.ukskbxc.mongodb.net/?retryWrites=true&w=majority&appName=timecapsule';
 
 // Middleware
 app.use(express.json());
@@ -36,9 +36,10 @@ app.use(cors({
   origin: FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  maxAge: 86400 // 24 hours
 }));
 
 

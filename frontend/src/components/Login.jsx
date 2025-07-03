@@ -16,13 +16,15 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
+  
     try {
-      const success = await login({ email: email.trim().toLowerCase(), password });
-      if (success) {
-        // Get the location state from the ProtectedRoute
+      const user = await login({ email: email.trim().toLowerCase(), password });
+  
+      if (user) {
         const from = location.state?.from?.pathname || '/';
-        navigate(from, { replace: true });
+        navigate(from, { replace: true }); // ⬅️ now only navigate if user is valid
+      } else {
+        setError('Login failed');
       }
     } catch (error) {
       setError(error.message || 'Login failed');
@@ -31,6 +33,7 @@ const Login = () => {
     }
   };
 
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="w-full max-w-md p-8 space-y-3 rounded-xl bg-gray-800/80 backdrop-blur-md border border-gray-700">

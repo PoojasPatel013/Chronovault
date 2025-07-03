@@ -42,14 +42,21 @@ const Register = () => {
       }
 
       const { user } = result;
-      login({ email: user.email, password });
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
       setError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
+    console.log('Submitting:', {
+      name,
+      email,
+      password,
+      gender,
+      birthdate
+    });
+    
   };
 
   return (
