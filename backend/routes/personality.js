@@ -46,10 +46,26 @@ router.post('/calculate', auth, async (req, res) => {
       const option = personalityQuestions[index].options[answer];
       dimensions[option.dimension] += option.weight;
     });
+    // Tally how many times each dimension appeared
+    const dimensionCounts = {
+      E: 0, I: 0,
+      S: 0, N: 0,
+      T: 0, F: 0,
+      J: 0, P: 0
+    };
 
-    // Normalize scores (0-100%)
+    // Count how many times each dimension was selected
+    answers.forEach((answer, index) => {
+      const option = personalityQuestions[index].options[answer];
+      if (option && option.dimension) {
+        dimensionCounts[option.dimension]++;
+      }
+    });
+
+    // Normalize each dimension's score based on how often it appeared
     Object.keys(dimensions).forEach(dimension => {
-      dimensions[dimension] = Math.round((dimensions[dimension] / totalPossibleScore) * 100);
+      const count = dimensionCounts[dimension] || 1; // Avoid divide-by-zero
+      dimensions[dimension] = Math.round((dimensions[dimension] / count) * 100);
     });
 
     // Determine dominant dimensions with score thresholds

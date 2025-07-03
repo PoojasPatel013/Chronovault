@@ -29,9 +29,6 @@ export default function PersonalityTest() {
     try {
       const response = await axios.get('http://localhost:8000/api/personality/questions', {
         withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${Cookies.get('jwt')}`
-        }
       });
       if (response.data && Array.isArray(response.data)) {
         setQuestions(response.data);
@@ -71,9 +68,7 @@ export default function PersonalityTest() {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/personality/calculate`, 
         { answers: formattedAnswers },
         {
-          headers: {
-            Authorization: `Bearer ${Cookies.get('jwt')}`
-          }
+          withCredentials: true,
         }
       );
       const resultData = response.data;

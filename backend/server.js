@@ -13,6 +13,13 @@ import { usersRouter } from './routes/users.js';
 import { communityRouter } from './routes/community.js';
 import { settingsRouter } from './routes/settings.js';
 import { personalityRouter } from './routes/personality.js';
+import { Router } from 'express';
+
+const openTherapyRoutes = Router();
+openTherapyRoutes.get('/ping', (req, res) => {
+  res.send("✅ Therapy route is alive!");
+});
+
 
 const __filename = import.meta.url;
 const __dirname = new URL(__filename).pathname;
@@ -31,6 +38,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 app.use(express.json());
 app.use(cookieParser());
 
+app.use('/api/therapy/', openTherapyRoutes);
 // CORS configuration
 app.use(cors({
   origin: FRONTEND_URL,

@@ -43,8 +43,7 @@ const AITherapy = () => {
       const options = {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get('jwt')}`
+          "Content-Type": "application/json"
         },
         credentials: 'include',
         body: JSON.stringify({ 
@@ -64,12 +63,6 @@ const AITherapy = () => {
       });
 
       const startTime = performance.now();
-      
-      // Ensure we have a valid token
-      const token = Cookies.get('jwt');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
 
       const res = await fetch(AI_CONFIG.API_PATH, options);
       if (!res.ok) {
