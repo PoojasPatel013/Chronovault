@@ -2,36 +2,58 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
+import { FaHeart, FaComment, FaShare, FaRegHeart } from "react-icons/fa";
 
 const CommunityFeed = () => {
-  const [capsules, setCapsules] = useState([]);
-  const [publicSessions, setPublicSessions] = useState([]);
-  const [credits, setCredits] = useState(0);
-  const [appUpdates, setAppUpdates] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Fetch public capsules, sessions, and app updates from the backend
-    const fetchData = async () => {
-      // Simulated API calls
-      const capsulesResponse = await fetch("/api/timecapsules/public");
-      const capsulesData = await capsulesResponse.json();
-      setCapsules(capsulesData);
-
-      const sessionsResponse = await fetch("/api/public-sessions");
-      const sessionsData = await sessionsResponse.json();
-      setPublicSessions(sessionsData);
-
-      const creditsResponse = await fetch("/api/user");
-      const creditsData = await creditsResponse.json();
-      setCredits(creditsData.credits);
-
-      const updatesResponse = await fetch("/api/app-updates");
-      const updatesData = await updatesResponse.json();
-      setAppUpdates(updatesData);
-    };
-
-    fetchData();
+    fetchPosts();
   }, []);
+
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/community-feed", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.json();
+      
+      // Randomize posts for varied viewing experience
+      const randomizedPosts = [...data].sort(() => Math.random() - 0.5);
+      
+      setPosts(randomizedPosts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLike = async (postId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/community-feed/${postId}/like`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.ok) {
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post._id === postId ? { ...post, likes: post.likes + 1 } : post
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
@@ -45,100 +67,103 @@ const CommunityFeed = () => {
           Community Feed
         </motion.h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="col-span-2 space-y-8"
-          >
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Public Capsules</h2>
-              <div className="space-y-4">
-                {capsules.map((capsule) => (
-                  <motion.div
-                    key={capsule.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-gray-800 p-4 rounded-lg shadow-md"
-                  >
-                    <p className="text-lg mb-2">{capsule.content}</p>
-                    <div className="flex justify-between text-sm text-gray-400">
-                      <span>By {capsule.createdBy}</span>
-                      <span>{new Date(capsule.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="mt-2 flex justify-between text-sm">
-                      <span>❤️ {capsule.likes}</span>
-                      <span>💬 {capsule.comments}</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">App Updates</h2>
-              <div className="space-y-4">
-                {appUpdates.map((update) => (
-                  <motion.div
-                    key={update.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-gray-800 p-4 rounded-lg shadow-md"
-                  >
-                    <h3 className="text-lg font-semibold mb-2">{update.title}</h3>
-                    <p className="text-sm text-gray-300 mb-2">{update.description}</p>
-                    <p className="text-xs text-gray-400">Released on {new Date(update.date).toLocaleDateString()}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="space-y-8"
-          >
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Your Chrono-Credits</h2>
-              <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-                <p className="text-3xl font-bold">{credits}</p>
-                <p className="text-sm text-gray-400">Available credits</p>
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Upcoming Public Sessions</h2>
-              <div className="space-y-4">
-                {publicSessions.map((session) => (
-                  <motion.div
-                    key={session.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-gray-800 p-4 rounded-lg shadow-md"
-                  >
-                    <h3 className="text-lg font-semibold mb-2">{session.title}</h3>
-                    <p className="text-sm text-gray-400 mb-1">Host: {session.host}</p>
-                    <p className="text-sm text-gray-400 mb-1">
-                      Date: {new Date(session.date).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-400 mb-1">Age Group: {session.ageGroup}</p>
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <motion.div
+              key={post._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-gray-800 rounded-xl overflow-hidden shadow-lg"
+            >
+              {/* Post Header */}
+              <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                    {post.user.avatar ? (
+                      <img
+                        src={post.user.avatar}
+                        alt={`${post.user.username} avatar`}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-400">{post.user.username[0]}</span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{post.user.username}</h3>
                     <p className="text-sm text-gray-400">
-                      Participants: {session.participants}/{session.maxParticipants}
+                      {new Date(post.createdAt).toLocaleDateString()}
                     </p>
-                    <button className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition-colors">
-                      Join Session
-                    </button>
-                  </motion.div>
-                ))}
+                  </div>
+                </div>
+                <div className="flex space-x-4">
+                  <button className="text-gray-400 hover:text-white">
+                    <FaShare size={20} />
+                  </button>
+                </div>
               </div>
+
+              {/* Post Content */}
+              <div className="p-4">
+                <p className="mb-4">{post.content}</p>
+
+                {post.file && post.file.type.startsWith('image') && (
+                  <img
+                    src={post.file.url}
+                    alt="Post"
+                    className="w-full rounded-lg"
+                  />
+                )}
+
+                {post.file && post.file.type === 'application/pdf' && (
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">PDF Document</h4>
+                    <a
+                      href={post.file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      View PDF
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Post Footer */}
+              <div className="border-t border-gray-700 p-4 flex justify-between items-center">
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => handleLike(post._id)}
+                    className="flex items-center space-x-2 text-gray-400 hover:text-white"
+                  >
+                    <FaHeart size={20} />
+                    <span>{post.likes}</span>
+                  </button>
+                  <button className="flex items-center space-x-2 text-gray-400 hover:text-white">
+                    <FaComment size={20} />
+                    <span>{post.comments}</span>
+                  </button>
+                </div>
+                <div className="flex space-x-4">
+                  <button className="text-gray-400 hover:text-white">
+                    Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {loading && (
+            <div className="flex justify-center py-8">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="w-8 h-8 border-4 border-white rounded-full"
+              />
             </div>
-          </motion.div>
+          )}
         </div>
       </div>
     </div>
